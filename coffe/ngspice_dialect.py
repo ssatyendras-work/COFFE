@@ -189,10 +189,14 @@ def resolve_probes(text, hierarchy):
 
 
 class CoffeLibraries(object):
-    """ ngspice copies of the libraries one includes file pulls in, refreshed when an original changes. """
+    """ ngspice copies of the libraries one includes file pulls in, refreshed when an original changes. With
+    translate=False (Spectre, until the probe shows a rule is needed) the libraries are read as COFFE wrote them and
+    only the includes are pointed (copies named <name>.<simulator>.l). """
 
-    def __init__(self, includes_path):
+    def __init__(self, includes_path, translate=True, simulator="ngspice"):
 
+        self.translate, self.suffix = translate, "." + simulator + ".l"
+        self.points_suffix = "." + simulator + ".points.l"
         self.includes_path = os.path.abspath(includes_path)
         self.folder = os.path.dirname(self.includes_path)
         self._stamp = None
@@ -215,7 +219,7 @@ class CoffeLibraries(object):
 
         text, sources = self._sources()
         stamp = tuple((path, os.path.getmtime(path), os.path.getsize(path)) for path in [self.includes_path] + sources if os.path.isfile(path))
-        target = os.path.basename(self.includes_path)[:-2] + SUFFIX
+        target = os.path.basename(self.includes_path)[:-2] + self.suffix
         if stamp == self._stamp:
             return target
         self.texts, self.rules, renamed = [], {"bare_rc_param": 0, "source_param": 0}, {}
@@ -225,11 +229,11 @@ class CoffeLibraries(object):
             with open(path) as handle:
                 original = handle.read()
             self.texts.append(original)
-            translated, counts = translate_library_rules(original)
+            translated, counts = translate_library_rules(original) if self.translate else (original, {})
             if any(counts.values()):
                 for rule, count in counts.items():
                     self.rules[rule] += count
-                copy = path[:-2] + SUFFIX if path.endswith(".l") else path + SUFFIX
+                copy = path[:-2] + self.suffix if path.endswith(".l") else path + self.suffix
                 with open(copy, "w") as handle:
                     handle.write(translated)
                 renamed[os.path.relpath(path, self.folder)] = os.path.relpath(copy, self.folder)
@@ -241,7 +245,7 @@ class CoffeLibraries(object):
         with open(os.path.join(self.folder, target), "w") as handle:
             handle.write(pointed)
         without_sweep = re.sub(r"""(?im)^\s*\.inc(?:lude)?\s+["']?""" + re.escape(SWEEP_INCLUDE) + r"""["']?\s*$""", "* sweep values: each point's deck includes its own", pointed)
-        with open(os.path.join(self.folder, os.path.basename(self.includes_path)[:-2] + POINTS_SUFFIX), "w") as handle:
+        with open(os.path.join(self.folder, os.path.basename(self.includes_path)[:-2] + self.points_suffix), "w") as handle:
             handle.write(without_sweep)
         self._stamp = stamp
         return target
@@ -252,8 +256,8 @@ class CoffeLibraries(object):
         shared sweep include, and the point's values from point_include (next to the deck). Returns text and rules. """
 
         text, rules = self.deck_for_ngspice(deck_text)
-        target = os.path.join(self.folder, os.path.basename(self.includes_path)[:-2] + SUFFIX)
-        points = os.path.join(self.folder, os.path.basename(self.includes_path)[:-2] + POINTS_SUFFIX)
+        target = os.path.join(self.folder, os.path.basename(self.includes_path)[:-2] + self.suffix)
+        points = os.path.join(self.folder, os.path.basename(self.includes_path)[:-2] + self.points_suffix)
         text = re.sub(r"""(?im)^(\s*\.lib\s+)(["'])[^"']*""" + re.escape(os.path.basename(target)) + r"""\2(.*)$""",
                       lambda m: m.group(1) + m.group(2) + points + m.group(2) + m.group(3) + '\n.INCLUDE "' + point_include + '"', text)
         return text, rules
@@ -265,6 +269,8 @@ class CoffeLibraries(object):
         includes = os.path.basename(self.includes_path)
         target = self.refresh()
         text, pointed = re.subn(r"""(["'])((?:\.\./)*)""" + re.escape(includes) + r"\1", lambda m: m.group(1) + m.group(2) + target + m.group(1), deck_text)
+        if not self.translate:
+            return text, [("includes", pointed)]
         text, probes = resolve_probes(text, Hierarchy(self.texts + [deck_text]))
         text, rc = translate_library(text)
         text, sources = brace_source_params(text)

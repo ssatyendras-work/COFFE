@@ -1,7 +1,8 @@
 # Co-Nexus: COFFE2 on ngspice (branch `conexus-ngspice`)
 
-COFFE2 as released runs HSPICE. This branch adds ngspice beside it, chosen per run with
-`COFFE_SIMULATOR=ngspice` (default `hspice`: unchanged). `master` stays at the RDS-TOOL pin (0987102)
+COFFE2 as released runs HSPICE. This branch adds ngspice and Spectre beside it, chosen per run with
+`COFFE_SIMULATOR=ngspice|spectre` (default `hspice`: unchanged). Spectre (hatf-tech `SpectreBackend`, ADR-0008
+amendment 1) uses the same per-point path on COFFE's own libraries, with `COFFE_SPECTRE` and `COFFE_SPECTRE_FLAGS`. `master` stays at the RDS-TOOL pin (0987102)
 for the HSPICE reference runs.
 
 | File | What |

@@ -47,14 +47,14 @@ def _hatf_tech():
     """ Import the hatf-tech deck interface, with a clear message when it is not on the path. """
 
     try:
-        from conexus_hatf_tech.simulators import NgspiceBackend
+        from conexus_hatf_tech.simulators import NgspiceBackend, SpectreBackend
         from conexus_hatf_tech.simulators.decks import DataSweep, ForeignDeck
     except ImportError as exc:
         raise ImportError(
-            "COFFE_SIMULATOR=ngspice needs conexus_hatf_tech (HATF-TECH-M0.3 or later) importable: "
+            "COFFE_SIMULATOR=ngspice|spectre needs conexus_hatf_tech (HATF-TECH-M0.3 amendment 1 or later) importable: "
             "put the hatf-tech src/ checkout and its dependencies on PYTHONPATH"
         ) from exc
-    return NgspiceBackend, DataSweep, ForeignDeck
+    return {"ngspice": NgspiceBackend, "spectre": SpectreBackend}, DataSweep, ForeignDeck
 
 
 ## The include each point's deck reads its values from, next to the deck.
@@ -67,13 +67,15 @@ class NgspiceInterface(spice.SpiceInterface):
     run() returns what SpiceInterface.run() returns, so the rest of COFFE is unchanged.
     """
 
+    ## Which hatf-tech backend runs the points, and whether COFFE's ngspice dialect rules apply (ngspice_dialect.py).
+    simulator = "ngspice"
+    coffe_rules = True
+
     def __init__(self, executable=None, osdi_path=None, timeout=None, workers=None):
 
         spice.SpiceInterface.__init__(self)
-        NgspiceBackend, self._DataSweep, ForeignDeck = _hatf_tech()
-        executable = executable or os.environ.get("COFFE_NGSPICE") or "ngspice"
-        osdi_path = os.environ.get("COFFE_NGSPICE_OSDI", "") if osdi_path is None else osdi_path
-        self.backend = NgspiceBackend(executable=executable, osdi_path=osdi_path)
+        backends, self._DataSweep, ForeignDeck = _hatf_tech()
+        self.backend = self._backend(backends[self.simulator], executable, osdi_path)
         # Each point's deck runs in its own folder and includes its values from there.
         self.foreign = ForeignDeck(self.backend, include_name=POINT_INCLUDE)
         self.timeout = float(timeout or os.environ.get("COFFE_NGSPICE_TIMEOUT", "600"))
@@ -85,6 +87,14 @@ class NgspiceInterface(spice.SpiceInterface):
         self.libraries = {}
 
         return
+
+
+    def _backend(self, backend_class, executable, osdi_path):
+        """ The ngspice backend: executable from COFFE_NGSPICE, OSDI library from COFFE_NGSPICE_OSDI (none by default). """
+
+        executable = executable or os.environ.get("COFFE_NGSPICE") or "ngspice"
+        osdi_path = os.environ.get("COFFE_NGSPICE_OSDI", "") if osdi_path is None else osdi_path
+        return backend_class(executable=executable, osdi_path=osdi_path)
 
 
     def run(self, sp_path, parameter_dict):
@@ -141,7 +151,7 @@ class NgspiceInterface(spice.SpiceInterface):
             return text + '\n.INCLUDE "' + POINT_INCLUDE + '"\n', [], []
         includes = os.path.normpath(os.path.join(str(sp_path.parent), match.group(1)))
         if includes not in self.libraries:
-            self.libraries[includes] = dialect.CoffeLibraries(includes)
+            self.libraries[includes] = dialect.CoffeLibraries(includes, translate=self.coffe_rules, simulator=self.simulator)
         translated, rules = self.libraries[includes].deck_for_points(text, POINT_INCLUDE)
         (sp_path.parent / (sp_path.stem + ".coffe" + sp_path.suffix)).write_text(translated)
         return translated, rules, self.libraries[includes].texts
@@ -166,13 +176,15 @@ class NgspiceInterface(spice.SpiceInterface):
         deck = folder / sp_path.name
         deck.write_text(text)
         prepared = self.foreign.prepare(deck, folder, point=point)
-        with open(folder / ".spiceinit", "a") as spiceinit:
-            spiceinit.write("set num_threads=%s\n" % self.threads)
+        if self.simulator == "ngspice":
+            with open(folder / ".spiceinit", "a") as spiceinit:
+                spiceinit.write("set num_threads=%s\n" % self.threads)
         start = time.time()
         log = self._simulate(prepared.deck)
         seconds = round(time.time() - start, 2)
         [measures] = self.foreign.read(prepared, log)
         record = prepared.record()
+        record["simulator"] = dict(record.get("simulator", {}), version=self.backend.version(log))
         record.update({
             "deck_digest": digest, "coffe_rules": rules, "seconds": seconds, "resumed": False,
             "status": {m.name.lower(): m.status for m in measures}, "coffe": {m.name.lower(): m.as_coffe() for m in measures},
@@ -199,19 +211,41 @@ class NgspiceInterface(spice.SpiceInterface):
             log = (exc.stdout or b"").decode("utf-8", errors="replace") + "\n*** timeout after %g s\n" % self.timeout
         except FileNotFoundError:
             print("----------------------------------------------------------")
-            print("              ngspice not found: " + command[0])
+            print("              simulator not found: " + command[0])
             print("----------------------------------------------------------")
             exit(2)
         (deck.parent / (deck.stem + ".lis")).write_text(log)
         return log
 
 
+class SpectreInterface(NgspiceInterface):
+    """
+    Runs COFFE's HSPICE decks on Spectre (hatf-tech SpectreBackend: SPICE language), one run per sweep point, with
+    the same parallel points, records and resume as ngspice. COFFE's libraries are read as COFFE wrote them: the
+    ngspice dialect rules stay off until the cluster probe shows Spectre needs one.
+      COFFE_SPECTRE        Spectre executable (default: spectre on PATH, e.g. after the site's module load)
+      COFFE_SPECTRE_FLAGS  extra flags the probe showed are needed, space-separated (e.g. "+spice")
+    Licence variables (CDS_LIC_FILE, LM_LICENSE_FILE) pass through the environment. COFFE_NGSPICE_WORKERS,
+    _TIMEOUT, _KEEP and _POINTS apply here too.
+    """
+
+    simulator = "spectre"
+    coffe_rules = False
+
+    def _backend(self, backend_class, executable, osdi_path):
+
+        executable = executable or os.environ.get("COFFE_SPECTRE") or "spectre"
+        return backend_class(executable=executable, flags=os.environ.get("COFFE_SPECTRE_FLAGS", "").split())
+
+
 def make_interface():
-    """ The SPICE interface COFFE_SIMULATOR names: hspice (default, upstream) or ngspice. """
+    """ The SPICE interface COFFE_SIMULATOR names: hspice (default, upstream), ngspice or spectre. """
 
     simulator = os.environ.get("COFFE_SIMULATOR", "hspice").lower()
     if simulator == "ngspice":
         return NgspiceInterface()
+    if simulator == "spectre":
+        return SpectreInterface()
     if simulator == "hspice":
         return spice.SpiceInterface()
-    raise ValueError("COFFE_SIMULATOR must be hspice or ngspice, not " + simulator)
+    raise ValueError("COFFE_SIMULATOR must be hspice, ngspice or spectre, not " + simulator)

@@ -180,11 +180,50 @@ def test_points_can_live_outside_coffes_output_folder(arch, monkeypatch, tmp_pat
     assert len(list((tmp_path / "cache" / "test").glob("test.0000-*/record.json"))) == 1 and not (arch / "test" / "points").exists()
 
 
+FAKE_SPECTRE = """#!/bin/sh
+# Writes measures where Spectre's SPICE language puts them (<stem>.measure); counts runs in ../../../spectre_runs.txt.
+for a; do deck=$a; done
+echo "$*" >> ../../../spectre_runs.txt
+head -1 "$deck" | grep -q '^simulator lang=spice$' || exit 3
+w=$(sed -n 's/^.PARAM inv_1_nmos = //p' sweep_point.l)
+echo "meas_total_tfall = $w" > "${deck%.sp}.measure"
+echo "meaz1_delay = 1.0e-11" >> "${deck%.sp}.measure"
+echo "meaz2_delay = 2.0e-11" >> "${deck%.sp}.measure"
+echo "meas_current = failed" >> "${deck%.sp}.measure"
+echo "Cadence (R) Virtuoso (R) Spectre (R) Circuit Simulator"
+echo "Version 21.1.0.389.isr8 64bit -- 2 Jun 2022"
+"""
+
+
+def test_spectre_runs_the_same_points_on_coffes_own_libraries(arch, monkeypatch):
+    pytest.importorskip("conexus_hatf_tech.simulators.spectre")
+    import coffe.ngspice_interface as ngspice_interface
+
+    fake = arch / "spectre"
+    fake.write_text(FAKE_SPECTRE)
+    fake.chmod(fake.stat().st_mode | stat.S_IEXEC)
+    monkeypatch.chdir(arch)
+    monkeypatch.setenv("COFFE_SPECTRE", str(fake))
+    monkeypatch.setenv("COFFE_SPECTRE_FLAGS", "+spice")
+    monkeypatch.setenv("COFFE_SIMULATOR", "spectre")
+    interface = ngspice_interface.make_interface()
+    assert type(interface).__name__ == "SpectreInterface"
+    measured = interface.run(str(arch / "test" / "test.sp"), {"inv_1_nmos": ["4.5e-08", "9e-08"], "inv_1_pmos": ["9e-08", "9e-08"]})
+    assert measured["meas_total_tfall"] == ["4.5e-08", "9e-08"] and measured["meas_current"] == ["failed", "failed"]
+    assert measured["meas_delay"] == ["2.0e-11", "2.0e-11"]
+    assert all(line.startswith("+log test.spectre.log +spice") for line in (arch / "spectre_runs.txt").read_text().splitlines())
+    record = json.loads((arch / "test" / "ngspice_runs.jsonl").read_text().splitlines()[0])
+    assert record["simulator"] == {"name": "spectre", "executable": str(fake), "flags": ["+spice"], "data_sweep": False, "version": "21.1.0.389.isr8"}
+    assert record["coffe_rules"] == [{"rule": "includes", "count": 1}]  # no ngspice rules
+    assert "CWIRE_1 n_in gnd Cw" in (arch / "basic_subcircuits.l").read_text() and not (arch / "basic_subcircuits.spectre.l").exists()
+    assert "basic_subcircuits.l" in (arch / "includes.spectre.points.l").read_text()
+
+
 def test_the_simulator_is_chosen_by_the_environment(monkeypatch):
     import coffe.ngspice_interface as ngspice_interface
 
     monkeypatch.delenv("COFFE_SIMULATOR", raising=False)
     assert type(ngspice_interface.make_interface()) is spice.SpiceInterface
-    monkeypatch.setenv("COFFE_SIMULATOR", "spectre")
+    monkeypatch.setenv("COFFE_SIMULATOR", "xyce")
     with pytest.raises(ValueError):
         ngspice_interface.make_interface()
