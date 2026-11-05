@@ -1,0 +1,203 @@
+Created 2026-11-05 10:01:26.340993
+
+----------------------------------------------
+  RUN OPTIONS:
+----------------------------------------------
+
+  Transistor sizing: off
+  Optimization type: global
+  Number of top combos to re-ERF: 1
+  Area optimization weight: 1
+  Delay optimization weight: 1
+  Maximum number of sizing iterations: 6
+
+
+-------------------------------------------------
+  ARCHITECTURE PARAMETERS:
+-------------------------------------------------
+
+  Number of BLEs per cluster (N): 4
+  LUT size (K): 4
+  LUT fracturability level: 1
+  Number of adder bits per ALM: 1
+  Channel width (W): 300
+  Wire segment length (L): 4
+  Number of cluster inputs (I): 12
+  Number of BLE outputs to general routing (Or): 2
+  Number of BLE outputs to local routing (Ofb): 2
+  Total number of cluster outputs (N*Or): 8
+  Switch block flexibility (Fs): 3
+  Cluster input flexibility (Fcin): 0.15
+  Cluster output flexibility (Fcout): 0.1
+  Local MUX population (Fclocal): 0.5
+  LUT input for register selection MUX (Rsel): c
+  LUT input(s) for register feedback MUX(es) (Rfb): c
+
+-------------------------------------------------
+  PROCESS TECHNOLOGY PARAMETERS:
+-------------------------------------------------
+
+  transistor_type = bulk
+  switch_type = pass_transistor
+  vdd = 0.8
+  vsram = 1.0
+  vsram_n = 0.0
+  gate_length = 22
+  min_tran_width = 45
+  min_width_tran_area = 33864
+  sram_cell_area = 4.0
+  model_path = /coffe/spice_models/ptm_22nm_bulk_hp.l
+  model_library = 22NM_BULK_HP
+  metal = [(0.054825, 0.000175), (0.007862, 0.000215), (0.02924, 0.000139), (0.227273, 0.0)]
+
+
+|------------------------------------------------------------------------------|
+|   FPGA Implementation Details                                                |
+|------------------------------------------------------------------------------|
+
+  SWITCH BLOCK DETAILS:
+  Style: two-level MUX
+  Required MUX size: 10:1
+  Implemented MUX size: 12:1
+  Level 1 size = 4
+  Level 2 size = 3
+  Number of unused inputs = 2
+  Number of MUXes per tile: 150
+  Number of SRAM cells per MUX: 7
+
+  CONNECTION BLOCK DETAILS:
+  Style: two-level MUX
+  Required MUX size: 45:1
+  Implemented MUX size: 48:1
+  Level 1 size = 8
+  Level 2 size = 6
+  Number of unused inputs = 3
+  Number of MUXes per tile: 12
+  Number of SRAM cells per MUX: 14
+
+  LOCAL MUX DETAILS:
+  Style: two-level MUX
+  Required MUX size: 10:1
+  Implemented MUX size: 12:1
+  Level 1 size = 4
+  Level 2 size = 3
+  Number of unused inputs = 2
+  Number of MUXes per tile: 16
+  Number of SRAM cells per MUX: 7
+
+  LUT DETAILS:
+  Style: Fully encoded MUX tree
+  Size: 4-LUT
+  Internal buffering: 2-stage buffer betweens levels 3 and 4
+  Isolation inverters between SRAM and LUT inputs
+
+  LUT INPUT DRIVER DETAILS:
+  LUT input a type: default
+  LUT input b type: default
+  LUT input c type: reg_fb_rsel
+  LUT input d type: default
+
+  CLUSTER OUTPUT LOAD DETAILS:
+  Total number of SB inputs connected to cluster output: 30
+  Number of 'on' SB MUXes (assumed): 1
+  Number of 'partial' SB MUXes: 3
+  Number of 'off' SB MUXes: 26
+
+  ROUTING WIRE LOAD DETAILS:
+  Number of SB inputs connected to routing wire = 9
+  Wire: SB (on = 1, partial = 1, off = 7)
+  Number of CB inputs connected to routing wire = 4
+  Wire: CB (on = 1, partial = 1, off = 2)
+  Tile 1: SB (on = 1, partial = 1, off = 1); CB (on = 1, partial = 0, off = 0)
+  Tile 2: SB (on = 0, partial = 0, off = 2); CB (on = 0, partial = 1, off = 0)
+  Tile 3: SB (on = 0, partial = 0, off = 2); CB (on = 0, partial = 0, off = 1)
+  Tile 4: SB (on = 0, partial = 0, off = 2); CB (on = 0, partial = 0, off = 1)
+
+|------------------------------------------------------------------------------|
+
+
+|--------------------------------------------------------------------------------------------------|
+|    Area and Delay Report                                                                         |
+|--------------------------------------------------------------------------------------------------|
+
+  SUBCIRCUIT AREA, DELAY & POWER
+  ------------------------------
+  Subcircuit                    Area (um^2)  Delay (ps)   tfall (ps)   trise (ps)   Power at 250MHz (uW)  
+  sb_mux                        1.254        112.368      112.368      78.7749      8.95288               
+  sb_mux(with sram)             2.202        112.368      112.368      78.7749      8.95288               
+  cb_mux                        2.621        117.739      117.739      99.2882      2.4668200000000002
+  cb_mux(with sram)             4.517        117.739      117.739      99.2882      2.4668200000000002
+  local_mux                     0.764        59.7644      45.122       59.7644      0.44821300000000003
+  local_mux(with sram)          1.712        59.7644      45.122       59.7644      0.44821300000000003
+  local_ble_output(with sram)   0.453        120.7        120.7        108.351      1.85809
+  general_ble_output(with sram) 0.469        56.7224      53.3807      56.7224      2.22676
+  ff                            1.228        n/a          n/a          n/a          n/a
+  lut (with sram)               7.618        171.931      68.8924      171.931      n/a                   
+  lut_a                         n/a          300.111      300.111      134.4849     1.9117700000000002    
+  lut_a_driver                  0.093        66.3721      38.7107      66.3721      1.50325               
+  lut_a_driver_not              0.166        63.9183      53.7323      63.9183      1.5591400000000002    
+  lut_b                         n/a          299.334      299.334      131.1295     1.87748               
+  lut_b_driver                  0.093        64.8249      37.5502      64.8249      1.45109               
+  lut_b_driver_not              0.166        62.0542      52.9954      62.0542      1.5163                
+  lut_c                         n/a          189.2981     189.2981     98.02        1.25503               
+  lut_c_driver                  0.377        103.755      78.8763      103.755      2.02575               
+  lut_c_driver_not              0.166        102.802      93.2131      102.802      1.49787               
+  lut_d                         n/a          129.044      129.044      67.8397      1.49787               
+  lut_d_driver                  0.093        64.4151      37.7395      64.4151      1.41144               
+  lut_d_driver_not              0.166        61.3986      53.4693      61.3986      1.48428               
+  carry_chain                   0.872        59.1148      50.6482      59.1148      n/a                   
+  carry_chain_perf              0.073        50.452       37.0053      50.452       n/a                   
+  carry_chain_mux               0.469        99.2823      89.346       99.2823      n/a                   
+  carry_chain_inter             0.166        33.6744      29.3818      33.6744      n/a                   
+  total carry chain area        5.529        
+  xcarry_chain_and              0.291        69.0673      49.4487      69.0673      n/a                   
+  xcarry_chain_mux              0.469        61.9723      43.4988      61.9723      n/a                   
+
+
+  General routing metal pitch  = 0.0 nm
+  General routing metal layers  = 0
+  
+  TILE AREA CONTRIBUTIONS
+  -----------------------
+  Block             Total Area (um^2)   Fraction of total tile area
+  Tile              470.401             100%
+  LUT               35.756              7.601%
+  FF                4.91                1.044%
+  BLE output        7.377               1.568%
+  Local mux         27.395              5.824%
+  Connection block  54.208              11.524%
+  Switch block      330.316             70.22%
+  Non-active        0.0                 0.0%
+
+  VPR DELAYS
+  ----------
+  Path                                            Delay (ps)
+  Tdel (routing switch)                           1.12368e-10
+  T_ipin_cblock (connection block mux)            1.17739e-10
+  CLB input -> BLE input (local CLB routing)      5.97644e-11
+  LUT output -> BLE input (local feedback)        1.207e-10
+  LUT output -> CLB output (logic block output)   5.67224e-11
+  lut_a                                           3.664831e-10
+  lut_b                                           3.6415889999999997e-10
+  lut_c                                           2.930531e-10
+  lut_d                                           1.934591e-10
+
+  VPR AREAS
+  ----------
+  grid_logic_tile_area                            2535.9720611571815
+  ipin_mux_trans_size (connection block mux)      1.2559575028878802
+  mux_trans_size (routing switch)                 1.5082318657594311
+  buf_size (routing switch)                       13.706095836683255
+
+  SUMMARY
+  -------
+  Tile Area                            470.4 um^2
+  Representative Critical Path Delay   144.21 ps
+  Cost (area^1 x delay^1)              0.06784
+
+|--------------------------------------------------------------------------------------------------|
+
+Number of HSPICE simulations performed: 24
+Total time elapsed: 0 hours 0 minutes 14 seconds
+
+

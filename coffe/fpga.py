@@ -47,6 +47,7 @@ import math
 from . import basic_subcircuits
 from . import mux_subcircuits
 from . import lut_subcircuits
+from . import lut3  # Co-Nexus: 3-LUT halves of a fracturable 4-LUT
 from . import ff_subcircuits
 from . import load_subcircuits
 from . import memory_subcircuits
@@ -1037,12 +1038,9 @@ class _LUT(_SizableCircuit):
             self.input_driver_loads[name] = _LUTInputDriverLoad(name, use_tgate, use_fluts)
 
         if use_fluts:
-            if K == 5:
-                name = "e"
-                delay_weight = DELAY_WEIGHT_LUT_E
-            else:
-                name = "f"
-                delay_weight = DELAY_WEIGHT_LUT_F
+            # The input that selects between the two halves is the K-th: d (K4, Co-Nexus), e (K5) or f (K6).
+            name = chr(96 + K)
+            delay_weight = {"d": DELAY_WEIGHT_LUT_D, "e": DELAY_WEIGHT_LUT_E, "f": DELAY_WEIGHT_LUT_F}[name]
             self.input_drivers[name] = _LUTInput(name, Rsel, Rfb, delay_weight, use_tgate, use_fluts)
             self.input_driver_loads[name] = _LUTInputDriverLoad(name, use_tgate, use_fluts)            
     
@@ -1067,6 +1065,8 @@ class _LUT(_SizableCircuit):
             init_tran_sizes = self._generate_5lut(subcircuit_filename, min_tran_width, self.use_tgate, self.use_finfet, self.use_fluts)
         elif tempK == 4:
             init_tran_sizes = self._generate_4lut(subcircuit_filename, min_tran_width, self.use_tgate, self.use_finfet, self.use_fluts)
+        elif tempK == 3:
+            init_tran_sizes = self._generate_3lut(subcircuit_filename, min_tran_width, self.use_tgate, self.use_finfet, self.use_fluts)
 
   
         return init_tran_sizes
@@ -1082,7 +1082,8 @@ class _LUT(_SizableCircuit):
             self.top_spice_path = top_level.generate_lut6_top(self.name, self.use_tgate)
         elif tempK == 5:
             self.top_spice_path = top_level.generate_lut5_top(self.name, self.use_tgate)
-        elif tempK == 4:
+        elif tempK == 4 or tempK == 3:
+            # the 3-LUT keeps the 4-LUT's node names, so the 4-LUT deck measures it (coffe/lut3.py)
             self.top_spice_path = top_level.generate_lut4_top(self.name, self.use_tgate)
             
         # Generate top-level driver files
@@ -1146,6 +1147,18 @@ class _LUT(_SizableCircuit):
                         area_dict["inv_lut_out_buffer_1"] + 
                         area_dict["inv_lut_out_buffer_2"] +
                         16*area_dict["sram"])
+            elif tempK == 3:
+                area += (8*area_dict["inv_lut_0sram_driver_2"] + 
+                        8*area_dict["ptran_lut_L1"] + 
+                        4*area_dict["ptran_lut_L2"] + 
+                        2*area_dict["rest_lut_int_buffer"] + 
+                        2*area_dict["inv_lut_int_buffer_1"] + 
+                        2*area_dict["inv_lut_int_buffer_2"] +
+                        2*area_dict["ptran_lut_L3"] + 
+                        area_dict["rest_lut_out_buffer"] + 
+                        area_dict["inv_lut_out_buffer_1"] + 
+                        area_dict["inv_lut_out_buffer_2"] +
+                        8*area_dict["sram"])
         else :
             # Calculate area (differs with different values of K)
             if tempK == 6:    
@@ -1184,6 +1197,16 @@ class _LUT(_SizableCircuit):
                         area_dict["inv_lut_out_buffer_1"] + 
                         area_dict["inv_lut_out_buffer_2"] +
                         16*area_dict["sram"])
+            elif tempK == 3:
+                area += (8*area_dict["inv_lut_0sram_driver_2"] + 
+                        8*area_dict["tgate_lut_L1"] + 
+                        4*area_dict["tgate_lut_L2"] + 
+                        2*area_dict["inv_lut_int_buffer_1"] + 
+                        2*area_dict["inv_lut_int_buffer_2"] +
+                        2*area_dict["tgate_lut_L3"] + 
+                        area_dict["inv_lut_out_buffer_1"] + 
+                        area_dict["inv_lut_out_buffer_2"] +
+                        8*area_dict["sram"])
         
 
         #TODO: level of fracturablility will affect this
@@ -1213,7 +1236,21 @@ class _LUT(_SizableCircuit):
     def update_wires(self, width_dict, wire_lengths, wire_layers, lut_ratio):
         """ Update wire lengths and wire layers based on the width of things, obtained from width_dict. """
 
-        if not self.use_tgate :
+        if self.use_fluts and self.K == 4:
+            # Co-Nexus: the 3-LUT halves of a fracturable 4-LUT (coffe/lut3.py), laid out as the 4-LUT one level shorter
+            switch = "tgate" if self.use_tgate else "ptran"
+            wire_lengths["wire_lut_sram_driver"] = (width_dict["inv_lut_0sram_driver_2"] + width_dict["inv_lut_0sram_driver_2"])/4
+            wire_lengths["wire_lut_sram_driver_out"] = (width_dict["inv_lut_0sram_driver_2"] + width_dict[switch + "_lut_L1"])/4
+            wire_lengths["wire_lut_L1"] = width_dict[switch + "_lut_L1"]
+            wire_lengths["wire_lut_L2"] = 2*width_dict[switch + "_lut_L1"]
+            wire_lengths["wire_lut_int_buffer"] = (width_dict["inv_lut_int_buffer_1"] + width_dict["inv_lut_int_buffer_2"])/4
+            wire_lengths["wire_lut_int_buffer_out"] = (width_dict["inv_lut_int_buffer_2"] + width_dict[switch + "_lut_L3"])/4
+            wire_lengths["wire_lut_L3"] = 4*width_dict[switch + "_lut_L1"]
+            wire_lengths["wire_lut_out_buffer"] = (width_dict["inv_lut_out_buffer_1"] + width_dict["inv_lut_out_buffer_2"])/4
+            for wire in ("wire_lut_sram_driver", "wire_lut_sram_driver_out", "wire_lut_L1", "wire_lut_L2", "wire_lut_int_buffer",
+                         "wire_lut_int_buffer_out", "wire_lut_L3", "wire_lut_out_buffer"):
+                wire_layers[wire] = 0
+        elif not self.use_tgate :
             if self.K == 6:        
                 # Update wire lengths
                 wire_lengths["wire_lut_sram_driver"] = (width_dict["inv_lut_0sram_driver_2"] + width_dict["inv_lut_0sram_driver_2"])/4
@@ -1613,6 +1650,35 @@ class _LUT(_SizableCircuit):
         
         return self.initial_transistor_sizes
 
+
+
+    def _generate_3lut(self, subcircuit_filename, min_tran_width, use_tgate, use_finfet, use_fluts):
+        """ Co-Nexus: the 3-LUT halves of a fracturable 4-LUT (coffe/lut3.py), with the 4-LUT's initial sizes less level 4. """
+        print("Generating 3-LUT")
+
+        if not use_tgate:
+            self.transistor_names, self.wire_names = lut3.generate_ptran_lut3(subcircuit_filename, min_tran_width, use_finfet)
+            sizes = {"inv_lut_0sram_driver_2_nmos": 4, "inv_lut_0sram_driver_2_pmos": 6, "ptran_lut_L1_nmos": 2, "ptran_lut_L2_nmos": 2,
+                     "rest_lut_int_buffer_pmos": 1, "inv_lut_int_buffer_1_nmos": 2, "inv_lut_int_buffer_1_pmos": 2, "inv_lut_int_buffer_2_nmos": 4,
+                     "inv_lut_int_buffer_2_pmos": 6, "ptran_lut_L3_nmos": 3, "rest_lut_out_buffer_pmos": 1, "inv_lut_out_buffer_1_nmos": 2,
+                     "inv_lut_out_buffer_1_pmos": 2, "inv_lut_out_buffer_2_nmos": 4, "inv_lut_out_buffer_2_pmos": 6}
+        else:
+            self.transistor_names, self.wire_names = lut3.generate_tgate_lut3(subcircuit_filename, min_tran_width, use_finfet)
+            sizes = {"inv_lut_0sram_driver_2_nmos": 4, "inv_lut_0sram_driver_2_pmos": 6, "tgate_lut_L1_nmos": 2, "tgate_lut_L1_pmos": 2,
+                     "tgate_lut_L2_nmos": 2, "tgate_lut_L2_pmos": 2, "inv_lut_int_buffer_1_nmos": 2, "inv_lut_int_buffer_1_pmos": 2,
+                     "inv_lut_int_buffer_2_nmos": 4, "inv_lut_int_buffer_2_pmos": 6, "tgate_lut_L3_nmos": 3, "tgate_lut_L3_pmos": 3,
+                     "inv_lut_out_buffer_1_nmos": 2, "inv_lut_out_buffer_1_pmos": 2, "inv_lut_out_buffer_2_nmos": 4, "inv_lut_out_buffer_2_pmos": 6}
+        self.initial_transistor_sizes.update(sizes)
+
+        for name in ("a", "b", "c"):
+            self.input_drivers[name].generate(subcircuit_filename, min_tran_width)
+            self.input_driver_loads[name].generate(subcircuit_filename, self.K)
+        # A fracturable 4-LUT: d selects between the halves
+        if use_fluts:
+            self.input_drivers["d"].generate(subcircuit_filename, min_tran_width)
+            self.input_driver_loads["d"].generate(subcircuit_filename, self.K)
+
+        return self.initial_transistor_sizes
 
 
 class _CarryChainMux(_SizableCircuit):
@@ -3017,6 +3083,13 @@ class _RoutingWireLoad:
             self.cb_load_partial = 1 
         # Number of off paths is just number connected to routing wire - on - partial
         self.cb_load_off = cb_load_per_tile*L - self.cb_load_partial - self.cb_load_on
+        # Co-Nexus: with few cluster inputs on a wide channel (I/2 * cb_mux_size < W, e.g. P1's K4 N4 tiles: I 10-12, Fc_in
+        # 0.15, W 300) the per-tile count rounds to 0 and the off count goes negative, so no load is distributed and the
+        # load deck cannot be written. Count the CB inputs over the whole wire instead (L tiles), never below on + partial.
+        if self.cb_load_off < 0:
+            cb_load_per_wire = max(int(round(I/2.0*cb_mux_size*L/W)), self.cb_load_on + self.cb_load_partial)
+            print("  Co-Nexus: " + str(cb_load_per_tile) + " CB inputs per tile rounds below on + partial; " + str(cb_load_per_wire) + " over the wire")
+            self.cb_load_off = cb_load_per_wire - self.cb_load_partial - self.cb_load_on
      
         # Now we want to figure out how to distribute this among the tiles. We have L tiles.
         tile_sb_on_budget = self.sb_load_on
@@ -6338,7 +6411,7 @@ class FPGA:
             print("  Updating delay for " + driver.name.replace("_driver", ""))
             driver_and_lut_sp_path = driver.top_spice_path.replace(".sp", "_with_lut.sp")
 
-            if (lut_input_name == "f" and self.specs.use_fluts and self.specs.K == 6) or (lut_input_name == "e" and self.specs.use_fluts and self.specs.K == 5):
+            if self.specs.use_fluts and lut_input_name == chr(96 + self.specs.K):  # f (K6), e (K5), d (K4, Co-Nexus)
                 lut_input.tfall = self.logic_cluster.ble.fmux.tfall
                 lut_input.trise = self.logic_cluster.ble.fmux.trise
                 tfall = lut_input.tfall

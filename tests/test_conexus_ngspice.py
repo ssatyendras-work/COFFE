@@ -227,3 +227,16 @@ def test_the_simulator_is_chosen_by_the_environment(monkeypatch):
     monkeypatch.setenv("COFFE_SIMULATOR", "xyce")
     with pytest.raises(ValueError):
         ngspice_interface.make_interface()
+
+
+def test_the_3lut_is_the_4lut_one_level_shorter(tmp_path):
+    import coffe.lut3 as lut3
+
+    for generate, switch in ((lut3.generate_ptran_lut3, "ptran"), (lut3.generate_tgate_lut3, "tgate")):
+        deck = tmp_path / (switch + ".l")
+        trans, wires = generate(str(deck), 45, False)
+        text = deck.read_text()
+        assert "lut_L4" not in text and "3-LUT" in text and "4-LUT" not in text
+        assert "X%s_lut_L3 n_6_2 n_8_1 n_c" % switch in text  # level 3 ends where level 4 did: the 4-LUT's top deck measures it
+        assert "Xinv_lut_out_buffer_1 n_8_2 n_9_1" in text
+        assert not [n for n in trans + wires if "L4" in n] and "%s_lut_L3_nmos" % switch in trans and "wire_lut_L3" in wires

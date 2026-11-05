@@ -56,5 +56,14 @@ Time step: ngspice caps its step at `.TRAN`'s print step (1 ps), HSPICE does not
 sb_mux deck, one CPU: 54.3 s as written; maximum step 5 ps 11.3 s (total delays within 0.06 %), 20 ps
 3.4 s (within 0.9 %), 100 ps 1.6 s (19 % off: too coarse). `tran_tmax` appends 5 ps by default.
 
+3-input LUT (`coffe/lut3.py`, X-PACE G0.4c): COFFE2 builds a fracturable K-LUT from two (K-1)-input halves and had
+6-, 5- and 4-LUT generators only; the 3-LUT is its 4-LUT one level shorter (node names kept, so the 4-LUT's top-level
+deck measures it), with area, wire and initial-size cases in `fpga.py`, and the halves' select input named after K
+(`d` for K4). Also in `fpga.py`: a routing wire's CB load was rounded per tile, which gives 0 and an impossible
+negative off count when I/2 * cb_mux_size < W (I <= 12 at Fc_in 0.15, W 300: k4-N4 tiles); then the inputs are
+counted over the wire (L tiles) instead, logged; other tiles keep COFFE's count. `evidence/lut3_thinkpad`: k4-N4-F1-C1
+without sizing on ngspice, 24 simulations, 470.4 um2, 144.21 ps. COFFE's xcarry_chain_mux deck measures
+`V(n_general_out)`, a node it does not have, so `meas_logic_low_voltage` fails there on any simulator (unused).
+
 Not yet: sizing runs (thousands of points; one ngspice process per point, sequential), FinFET
 decks (ASAP7 cards through OSDI BSIM-CMG), a comparison with HSPICE on the same tiles (G0.4b, on Slurm).
