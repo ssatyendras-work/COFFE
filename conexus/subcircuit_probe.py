@@ -2,6 +2,8 @@
 # then as a sizing sweep, and time it per point (an estimate of a tile's sizing time on ngspice).
 #   python conexus/subcircuit_probe.py <input.yaml> [--subcircuit sb_mux] [--points 8] [--out probe.json]
 # Generates the tile's SPICE files like coffe.py (no sizing), then runs only the named subcircuit.
+# The COFFE it imports is the one in the current folder when there is one (released COFFE2 for HSPICE runs), else this
+# checkout's; COFFE_SIMULATOR=ngspice needs this branch's coffe/ngspice_interface.py.
 
 import argparse
 import json
@@ -11,10 +13,21 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if os.path.isdir(os.path.join(os.getcwd(), "coffe")):
+    sys.path.insert(0, os.getcwd())
 
 import coffe.fpga as fpga
-import coffe.ngspice_interface as ngspice_interface
+import coffe.spice as spice
 import coffe.utils as utils
+
+
+def make_interface():
+    """ HSPICE (COFFE's own interface) or ngspice (this branch), as COFFE_SIMULATOR says. """
+
+    if os.environ.get("COFFE_SIMULATOR", "hspice").lower() == "ngspice":
+        import coffe.ngspice_interface as ngspice_interface
+        return ngspice_interface.NgspiceInterface()
+    return spice.SpiceInterface()
 
 
 def coffe_args(arch_description):
@@ -56,7 +69,7 @@ def main():
     args = coffe_args(a.arch_description)
     params = utils.load_params(args.arch_description, args)
     folder = utils.create_output_dir(args.arch_description, params["fpga_arch_params"]["arch_out_folder"])
-    interface = ngspice_interface.make_interface()
+    interface = make_interface()
     fpga_inst = fpga.FPGA(params, args, interface)
     os.chdir(folder)
     fpga_inst.generate(False, False)

@@ -19,6 +19,10 @@
 #    default 5p) is appended: on sb_mux 5 times faster, delays within 0.1 % of the 1 ps run (20p:
 #    16 times, within 1 %).
 #
+# 5. ground_find: ".MEASURE TRAN x FIND V(gnd) AT=3n" (COFFE's carry-chain decks); ngspice keeps no vector for
+#    ground, so the measure fails, and COFFE's sizing treats a failed logic-low voltage as an invalid point. It
+#    becomes ".MEASURE TRAN x PARAM='0'": the value HSPICE reports for ground.
+#
 # All are logged as named rules (rule, count), like hatf-tech's RuleApplied, for the run record.
 
 import os
@@ -36,6 +40,7 @@ _LIB_REF = re.compile(r"""(?im)^(\s*\.(?:lib|include|inc)\s+)(["']?)([^"'\s]+)(\
 _PROBE = re.compile(r"(?<![\w.])([vV])\(\s*([\w.]+)\s*(?:,\s*([\w.]+)\s*)?\)")
 _SOURCE_FN = re.compile(r"(?im)^(\s*[vi]\w*\s+.*?\b(?:pulse|pwl|sin|exp|sffm)\s*\()([^)]*)(\))")
 _TRAN = re.compile(r"(?im)^(\s*\.tran\s+(?!sweep)\S+\s+(?!sweep)\S+)((?:\s+sweep\b.*)?)\s*$")
+_GROUND_FIND = re.compile(r"(?im)^(\s*\.meas(?:ure)?\s+tran\s+\w+)\s+find\s+v\(\s*(?:gnd|0)\s*\)\s+at\s*=\s*\S+\s*$")
 _GROUND = {"0", "gnd", "gnd!"}
 
 
@@ -156,6 +161,12 @@ def tran_tmax(text, tmax):
     return _TRAN.subn(lambda m: m.group(1) + " 0 " + tmax + m.group(2), text)
 
 
+def ground_find(text):
+    """ A FIND of ground's voltage as the constant 0; returns the text and how many changed. """
+
+    return _GROUND_FIND.subn(lambda m: m.group(1) + " PARAM='0'", text)
+
+
 def resolve_probes(text, hierarchy):
     """ Rewrite V(path) probes that name subcircuit ports to the nets ngspice knows; returns text and count. """
 
@@ -258,7 +269,8 @@ class CoffeLibraries(object):
         text, rc = translate_library(text)
         text, sources = brace_source_params(text)
         text, tmax = tran_tmax(text, os.environ.get("COFFE_NGSPICE_TMAX", "5p"))
+        text, grounds = ground_find(text)
         return text, [
             ("ngspice_includes", pointed), ("bare_rc_param", self.rules.get("bare_rc_param", 0) + rc),
-            ("source_param", self.rules.get("source_param", 0) + sources), ("port_probe", probes), ("tran_tmax", tmax),
+            ("source_param", self.rules.get("source_param", 0) + sources), ("port_probe", probes), ("tran_tmax", tmax), ("ground_find", grounds),
         ]

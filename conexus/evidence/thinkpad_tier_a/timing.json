@@ -1,0 +1,56 @@
+{
+ "tier": "A",
+ "simulator": "ngspice",
+ "input": "flut0.yaml",
+ "iterations": null,
+ "tmax": "5p",
+ "workers": 2,
+ "wall_s": 202.01,
+ "cpu_s": 402.88,
+ "simulations": 30,
+ "s_per_simulation": 6.364,
+ "cpu_s_per_simulation": 12.708,
+ "sb_mux_s_per_point": 2.6,
+ "host": "sssThinkpadE14",
+ "cpu_model": "11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz",
+ "cpus": {
+  "affinity": 8,
+  "cgroup_quota": 2.0
+ },
+ "slurm_job": null,
+ "steps": [
+  {
+   "name": "coffe_no_sizing",
+   "command": [
+    "/opt/conexus/coffe-venv/bin/python",
+    "-W",
+    "ignore",
+    "coffe.py",
+    "-n",
+    "/out/ngspice-5p/input.yaml"
+   ],
+   "exit": 0,
+   "wall_s": 190.91,
+   "cpu_s": 381.24
+  },
+  {
+   "name": "sb_mux_probe",
+   "command": [
+    "/opt/conexus/coffe-venv/bin/python",
+    "-W",
+    "ignore",
+    "/coffe/conexus/subcircuit_probe.py",
+    "/out/ngspice-5p/probe_input.yaml",
+    "--points",
+    "2",
+    "--out",
+    "/out/ngspice-5p/sb_mux_probe.json"
+   ],
+   "exit": 0,
+   "wall_s": 11.1,
+   "cpu_s": 21.64
+  }
+ ],
+ "coffe_root": "/coffe",
+ "started": "2026-11-05T09:16:47+0000"
+}

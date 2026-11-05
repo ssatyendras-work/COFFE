@@ -1,0 +1,86 @@
+{
+ "input": "/out/ngspice-5p/probe_input.yaml",
+ "subcircuit": "sb_mux",
+ "simulator": "ngspice",
+ "use_tgate": false,
+ "single": {
+  "meas_inv_sb_mux_1_tfall": [
+   "1.92727e-11"
+  ],
+  "meas_inv_sb_mux_1_trise": [
+   "7.38741e-11"
+  ],
+  "meas_inv_sb_mux_2_tfall": [
+   "1.74109e-10"
+  ],
+  "meas_inv_sb_mux_2_trise": [
+   "1.12401e-10"
+  ],
+  "meas_total_tfall": [
+   "1.74109e-10"
+  ],
+  "meas_total_trise": [
+   "1.12401e-10"
+  ],
+  "meas_logic_low_voltage": [
+   "7.24355e-05"
+  ],
+  "meas_current": [
+   "-7.43786e-14"
+  ],
+  "meas_avg_power": [
+   "1.48757e-05"
+  ]
+ },
+ "single_s": 5.33,
+ "swept_transistors": [
+  "ptran_sb_mux_L1_nmos",
+  "ptran_sb_mux_L2_nmos",
+  "rest_sb_mux_pmos",
+  "inv_sb_mux_1_nmos",
+  "inv_sb_mux_1_pmos",
+  "inv_sb_mux_2_nmos",
+  "inv_sb_mux_2_pmos"
+ ],
+ "points": 2,
+ "sweep": {
+  "meas_inv_sb_mux_1_tfall": [
+   "1.92727e-11",
+   "1.85815e-11"
+  ],
+  "meas_inv_sb_mux_1_trise": [
+   "7.38741e-11",
+   "6.52319e-11"
+  ],
+  "meas_inv_sb_mux_2_tfall": [
+   "1.74109e-10",
+   "1.35858e-10"
+  ],
+  "meas_inv_sb_mux_2_trise": [
+   "1.12401e-10",
+   "8.86909e-11"
+  ],
+  "meas_total_tfall": [
+   "1.74109e-10",
+   "1.35858e-10"
+  ],
+  "meas_total_trise": [
+   "1.12401e-10",
+   "8.86909e-11"
+  ],
+  "meas_logic_low_voltage": [
+   "7.24355e-05",
+   "7.84033e-05"
+  ],
+  "meas_current": [
+   "-7.43786e-14",
+   "-8.23648e-14"
+  ],
+  "meas_avg_power": [
+   "1.48757e-05",
+   "1.64730e-05"
+  ]
+ },
+ "sweep_s": 5.2,
+ "s_per_point": 2.6
+}

@@ -75,6 +75,11 @@ def test_tran_gets_a_maximum_step():
     assert dialect.tran_tmax(".TRAN 1p 8n\n", "")[1] == 0  # COFFE_NGSPICE_TMAX= turns it off
 
 
+def test_a_find_of_ground_is_zero():
+    text, count = dialect.ground_find(".MEASURE TRAN meas_logic_low_voltage FIND V(gnd) AT=3n\n.MEASURE TRAN m FIND V(n_1) AT=3n\n")
+    assert count == 1 and ".MEASURE TRAN meas_logic_low_voltage PARAM='0'" in text and "FIND V(n_1)" in text
+
+
 def test_port_probes_resolve_to_the_owning_net():
     hierarchy = dialect.Hierarchy([LIBRARY, DECK])
     assert hierarchy.resolve("Xload_1.Xstage_on.n_in") == "n_1"  # port of stage, port of load, top net
@@ -88,7 +93,7 @@ def test_port_probes_resolve_to_the_owning_net():
 def test_the_deck_points_at_ngspice_copies_with_rules_counted(arch):
     libraries = dialect.CoffeLibraries(str(arch / "includes.l"))
     text, rules = libraries.deck_for_ngspice(DECK)
-    assert dict(rules) == {"ngspice_includes": 1, "bare_rc_param": 3, "source_param": 1, "port_probe": 4, "tran_tmax": 1}
+    assert dict(rules) == {"ngspice_includes": 1, "bare_rc_param": 3, "source_param": 1, "port_probe": 4, "tran_tmax": 1, "ground_find": 0}
     assert ".TRAN 1p 4n 0 5p SWEEP DATA=sweep_data" in text
     assert "PULSE ({supply_v} 0 0 0 0 2n 4n)" in text
     assert '.LIB "../includes.ngspice.l" INCLUDES' in text and "TRIG V(n_1)" in text

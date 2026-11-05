@@ -1,0 +1,37 @@
+# Hand-off kits for timed COFFE2 runs on ngspice (conexus/kits.py). Owner's decisions, 2026-11-05: ngspice at 5 ps and
+# 20 ps maximum step against the archived HSPICE flut0 run; Hyperion (Docker, about 32 CPUs, load guard 96) and the
+# Slurm cluster (udocker, settings from ChiSER's chess: module udocker 1.3.3, R1, shared container, batch_long.q,
+# lvkclsclc010 excluded, ROOT on /imec/other/sdsi).
+hatf_tech: ~/workspace/Co-Nexus/frameworks/HATF/HATF-TECH/hatf-tech
+image:
+  reference: registry.conexus.local/hatf-tech/technology:0.2.0
+  archive: ~/workspace/Co-Nexus/collaterals/images/technology_0.2.0.tar
+kits:
+  - name: coffe-flut0-ngspice-hyperion
+    where: hyperion
+    engine: docker
+    remote: siva@hyperion
+    root: /home/siva/conexus
+    runs:
+      - {name: ngspice-5p, tmax: 5p}
+      - {name: ngspice-20p, tmax: 20p}
+    iterations: 4
+    max_load: 96
+    tier_a: {cpus: 4, estimate: about 5 minutes for both runs}
+    tier_b: {cpus: 16, estimate: see the estimate in the hand-off message}
+  - name: coffe-flut0-ngspice-slurm
+    where: slurm
+    engine: udocker
+    runs:
+      - {name: ngspice-5p, tmax: 5p}
+      - {name: ngspice-20p, tmax: 20p}
+    iterations: 4
+    slurm:
+      root: /imec/other/sdsi/$USER/private/conexus
+      container: conexus-technology-0.2.0
+      execmode: R1
+      partition: batch_long.q
+      exclude: lvkclsclc010
+      module: udocker
+    tier_a: {cpus: 4, mem: 8G, time: "01:00:00", estimate: about 5 minutes per task}
+    tier_b: {cpus: 16, mem: 32G, time: "4-00:00:00", estimate: see the estimate in the hand-off message}
