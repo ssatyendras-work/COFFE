@@ -14,36 +14,48 @@
   "k5-N10-F1-C2",
   "k6-N8-F1-C1",
   "k6-N8-F1-C2",
+  "k4-N10-F1-C1",
+  "k4-N10-F1-C2",
   "k5-N8-F1-C1",
   "k5-N8-F1-C2",
   "k6-N6-F1-C1",
   "k6-N6-F1-C2",
+  "k4-N8-F1-C1",
+  "k4-N8-F1-C2",
   "k5-N6-F1-C1",
   "k5-N6-F1-C2",
   "k6-N10-F0-C0",
   "k6-N10-F1-C0",
   "k5-N10-F0-C0",
   "k5-N10-F1-C0",
+  "k4-N6-F1-C1",
+  "k4-N6-F1-C2",
   "k6-N4-F1-C1",
   "k6-N4-F1-C2",
   "k6-N8-F0-C0",
   "k6-N8-F1-C0",
   "k4-N10-F0-C0",
+  "k4-N10-F1-C0",
   "k5-N4-F1-C1",
   "k5-N4-F1-C2",
   "k5-N8-F0-C0",
   "k5-N8-F1-C0",
   "k6-N6-F0-C0",
   "k6-N6-F1-C0",
+  "k4-N4-F1-C1",
+  "k4-N4-F1-C2",
   "k4-N8-F0-C0",
+  "k4-N8-F1-C0",
   "k5-N6-F0-C0",
   "k5-N6-F1-C0",
   "k4-N6-F0-C0",
+  "k4-N6-F1-C0",
   "k6-N4-F0-C0",
   "k6-N4-F1-C0",
   "k5-N4-F0-C0",
   "k5-N4-F1-C0",
-  "k4-N4-F0-C0"
+  "k4-N4-F0-C0",
+  "k4-N4-F1-C0"
  ],
  "tiles": [
   {
@@ -101,6 +113,24 @@
    "weight": 96
   },
   {
+   "tile": "k4-N10-F1-C1",
+   "K": 4,
+   "N": 10,
+   "I": 28,
+   "fracture": "F1",
+   "carry": "C1",
+   "weight": 80
+  },
+  {
+   "tile": "k4-N10-F1-C2",
+   "K": 4,
+   "N": 10,
+   "I": 28,
+   "fracture": "F1",
+   "carry": "C2",
+   "weight": 80
+  },
+  {
    "tile": "k5-N8-F1-C1",
    "K": 5,
    "N": 8,
@@ -135,6 +165,24 @@
    "fracture": "F1",
    "carry": "C2",
    "weight": 72
+  },
+  {
+   "tile": "k4-N8-F1-C1",
+   "K": 4,
+   "N": 8,
+   "I": 22,
+   "fracture": "F1",
+   "carry": "C1",
+   "weight": 64
+  },
+  {
+   "tile": "k4-N8-F1-C2",
+   "K": 4,
+   "N": 8,
+   "I": 22,
+   "fracture": "F1",
+   "carry": "C2",
+   "weight": 64
   },
   {
    "tile": "k5-N6-F1-C1",
@@ -191,6 +239,24 @@
    "weight": 50
   },
   {
+   "tile": "k4-N6-F1-C1",
+   "K": 4,
+   "N": 6,
+   "I": 16,
+   "fracture": "F1",
+   "carry": "C1",
+   "weight": 48
+  },
+  {
+   "tile": "k4-N6-F1-C2",
+   "K": 4,
+   "N": 6,
+   "I": 16,
+   "fracture": "F1",
+   "carry": "C2",
+   "weight": 48
+  },
+  {
    "tile": "k6-N4-F1-C1",
    "K": 6,
    "N": 4,
@@ -232,6 +298,15 @@
    "N": 10,
    "I": 22,
    "fracture": "F0",
+   "carry": "C0",
+   "weight": 40
+  },
+  {
+   "tile": "k4-N10-F1-C0",
+   "K": 4,
+   "N": 10,
+   "I": 28,
+   "fracture": "F1",
    "carry": "C0",
    "weight": 40
   },
@@ -290,11 +365,38 @@
    "weight": 36
   },
   {
+   "tile": "k4-N4-F1-C1",
+   "K": 4,
+   "N": 4,
+   "I": 12,
+   "fracture": "F1",
+   "carry": "C1",
+   "weight": 32
+  },
+  {
+   "tile": "k4-N4-F1-C2",
+   "K": 4,
+   "N": 4,
+   "I": 12,
+   "fracture": "F1",
+   "carry": "C2",
+   "weight": 32
+  },
+  {
    "tile": "k4-N8-F0-C0",
    "K": 4,
    "N": 8,
    "I": 18,
    "fracture": "F0",
+   "carry": "C0",
+   "weight": 32
+  },
+  {
+   "tile": "k4-N8-F1-C0",
+   "K": 4,
+   "N": 8,
+   "I": 22,
+   "fracture": "F1",
    "carry": "C0",
    "weight": 32
   },
@@ -322,6 +424,15 @@
    "N": 6,
    "I": 14,
    "fracture": "F0",
+   "carry": "C0",
+   "weight": 24
+  },
+  {
+   "tile": "k4-N6-F1-C0",
+   "K": 4,
+   "N": 6,
+   "I": 16,
+   "fracture": "F1",
    "carry": "C0",
    "weight": 24
   },
@@ -369,6 +480,15 @@
    "fracture": "F0",
    "carry": "C0",
    "weight": 16
+  },
+  {
+   "tile": "k4-N4-F1-C0",
+   "K": 4,
+   "N": 4,
+   "I": 12,
+   "fracture": "F1",
+   "carry": "C0",
+   "weight": 16
   }
  ],
  "unsupported": [
@@ -378,39 +498,9 @@
    "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
   },
   {
-   "tile": "k4-N4-F1-C0",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N4-F0-C0 for the logic"
-  },
-  {
-   "tile": "k4-N4-F1-C1",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N4-F0-C0 for the logic"
-  },
-  {
-   "tile": "k4-N4-F1-C2",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N4-F0-C0 for the logic"
-  },
-  {
    "tile": "k4-N6-F0-C1",
    "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
    "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
-  },
-  {
-   "tile": "k4-N6-F1-C0",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N6-F0-C0 for the logic"
-  },
-  {
-   "tile": "k4-N6-F1-C1",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N6-F0-C0 for the logic"
-  },
-  {
-   "tile": "k4-N6-F1-C2",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N6-F0-C0 for the logic"
   },
   {
    "tile": "k4-N8-F0-C1",
@@ -418,39 +508,9 @@
    "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
   },
   {
-   "tile": "k4-N8-F1-C0",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N8-F0-C0 for the logic"
-  },
-  {
-   "tile": "k4-N8-F1-C1",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N8-F0-C0 for the logic"
-  },
-  {
-   "tile": "k4-N8-F1-C2",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N8-F0-C0 for the logic"
-  },
-  {
    "tile": "k4-N10-F0-C1",
    "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
    "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
-  },
-  {
-   "tile": "k4-N10-F1-C0",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N10-F0-C0 for the logic"
-  },
-  {
-   "tile": "k4-N10-F1-C1",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N10-F0-C0 for the logic"
-  },
-  {
-   "tile": "k4-N10-F1-C2",
-   "why": "COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-   "closest": "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use k4-N10-F0-C0 for the logic"
   },
   {
    "tile": "k5-N4-F0-C1",

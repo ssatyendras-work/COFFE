@@ -42,10 +42,7 @@ def expressible(k, fracture, carry):
                 "with non-fracturable LUTs)",
                 "F0-C0 of the same K and N for the logic, and the carry chain of F1-%s at the same K and N (K5, K6) for the adder; "
                 "or extend the fork with a carry chain on non-fracturable LUTs" % carry)
-    if fracture == "F1" and k == 4:
-        return ("COFFE2 builds a fracturable K-LUT from (K-1)-input halves and has generators for 6-, 5- and 4-input LUTs "
-                "only (fpga._lut._generate_*lut): a fracturable 4-LUT needs a 3-input generator",
-                "add a 3-LUT generator to the fork (as _generate_4lut, one level less), or use K4-N-F0-C0 for the logic")
+    # K4-F1: two 3-LUT halves, built by the fork's 3-LUT generator (coffe/lut3.py, bb8af93)
     return None
 
 

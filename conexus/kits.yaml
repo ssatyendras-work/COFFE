@@ -47,4 +47,4 @@ kits:
     iterations: 4
     max_load: 96
     tier_a: {cpus: 2, estimate: "about a minute"}
-    tier_b: {cpus: 8, estimate: "about 2-4 days at 5p, about 1-1.5 days at 20p (estimate from flut0's simulation count; tier B of the flut0 kit replaces it)"}
+    tier_b: {cpus: 8, estimate: "about 2.5-5 days at 5p, about 1-2 days at 20p (48 tiles; estimate from flut0's simulation count; tier B of the flut0 kit replaces it)"}
