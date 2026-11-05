@@ -28,7 +28,7 @@ kits:
     iterations: 4
     slurm:
       root: /imec/other/sdsi/$USER/private/conexus
-      container: conexus-technology-0.2.0
+      container: conexus-technology-0_2_0  # udocker names: no dots or slashes
       execmode: R1
       partition: batch_long.q
       exclude: lvkclsclc010

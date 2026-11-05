@@ -111,6 +111,8 @@ class Kit(object):
 
         self.config, self.defaults = config, defaults
         self.name, self.engine, self.runs = config["name"], config["engine"], config["runs"]
+        if self.engine == "udocker" and any(c in config["slurm"]["container"] for c in "/. []"):
+            raise ValueError("udocker container names may not hold '/', '.', spaces or brackets: " + config["slurm"]["container"])
         return
 
 
