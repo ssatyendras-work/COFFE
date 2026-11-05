@@ -17,8 +17,8 @@ kits:
       - {name: ngspice-20p, tmax: 20p}
     iterations: 4
     max_load: 96
-    tier_a: {cpus: 4, estimate: about 5 minutes for both runs}
-    tier_b: {cpus: 16, estimate: see the estimate in the hand-off message}
+    tier_a: {cpus: 4, estimate: "about 1 minute for both runs"}
+    tier_b: {cpus: 16, estimate: "about 3-6 h at 5 ps and 1-2 h at 20 ps (both run at once, 16 CPUs each)"}
   - name: coffe-flut0-ngspice-slurm
     where: slurm
     engine: udocker
@@ -33,5 +33,5 @@ kits:
       partition: batch_long.q
       exclude: lvkclsclc010
       module: udocker
-    tier_a: {cpus: 4, mem: 8G, time: "01:00:00", estimate: about 5 minutes per task}
-    tier_b: {cpus: 16, mem: 32G, time: "4-00:00:00", estimate: see the estimate in the hand-off message}
+    tier_a: {cpus: 4, mem: 8G, time: "01:00:00", estimate: "about 1 minute per task, plus queue time"}
+    tier_b: {cpus: 16, mem: 32G, time: "2-00:00:00", estimate: "about 3-6 h at 5 ps and 1-2 h at 20 ps per task"}
