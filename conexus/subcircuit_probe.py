@@ -5,6 +5,7 @@
 
 import argparse
 import json
+import math
 import os
 import sys
 import time
@@ -59,6 +60,12 @@ def main():
     fpga_inst = fpga.FPGA(params, args, interface)
     os.chdir(folder)
     fpga_inst.generate(False, False)
+    # As coffe.py does without sizing: area, then wire lengths and RC from it, before any simulation.
+    fpga_inst.lb_height = math.sqrt(fpga_inst.area_dict["tile"])
+    fpga_inst.update_area()
+    fpga_inst.compute_distance()
+    fpga_inst.update_wires()
+    fpga_inst.update_wire_rc()
     circuit = getattr(fpga_inst, a.subcircuit)
     base = parameter_dict(fpga_inst)
     start = time.time()

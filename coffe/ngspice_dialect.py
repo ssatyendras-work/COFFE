@@ -28,6 +28,8 @@ import re
 SWEEP_INCLUDE = "sweep_data.l"
 ## Suffix of the translated copies.
 SUFFIX = ".ngspice.l"
+## Suffix of the includes copy without the sweep include, for decks that run points in parallel (each includes its own values).
+POINTS_SUFFIX = ".ngspice.points.l"
 
 _BARE_RC = re.compile(r"(?im)^(\s*[rcl]\w*\s+[\w.!#]+\s+[\w.!#]+\s+)([a-z_]\w*)(\s*(?:[$;].*)?)$")
 _LIB_REF = re.compile(r"""(?im)^(\s*\.(?:lib|include|inc)\s+)(["']?)([^"'\s]+)(\2)""")
@@ -224,10 +226,26 @@ class CoffeLibraries(object):
         def point(match):
             return match.group(1) + match.group(2) + renamed.get(match.group(3), match.group(3)) + match.group(4)
 
+        pointed = _LIB_REF.sub(point, text)
         with open(os.path.join(self.folder, target), "w") as handle:
-            handle.write(_LIB_REF.sub(point, text))
+            handle.write(pointed)
+        without_sweep = re.sub(r"""(?im)^\s*\.inc(?:lude)?\s+["']?""" + re.escape(SWEEP_INCLUDE) + r"""["']?\s*$""", "* sweep values: each point's deck includes its own", pointed)
+        with open(os.path.join(self.folder, os.path.basename(self.includes_path)[:-2] + POINTS_SUFFIX), "w") as handle:
+            handle.write(without_sweep)
         self._stamp = stamp
         return target
+
+
+    def deck_for_points(self, deck_text, point_include):
+        """ deck_for_ngspice for a deck that runs in its own folder: the libraries by absolute path, without the
+        shared sweep include, and the point's values from point_include (next to the deck). Returns text and rules. """
+
+        text, rules = self.deck_for_ngspice(deck_text)
+        target = os.path.join(self.folder, os.path.basename(self.includes_path)[:-2] + SUFFIX)
+        points = os.path.join(self.folder, os.path.basename(self.includes_path)[:-2] + POINTS_SUFFIX)
+        text = re.sub(r"""(?im)^(\s*\.lib\s+)(["'])[^"']*""" + re.escape(os.path.basename(target)) + r"""\2(.*)$""",
+                      lambda m: m.group(1) + m.group(2) + points + m.group(2) + m.group(3) + '\n.INCLUDE "' + point_include + '"', text)
+        return text, rules
 
 
     def deck_for_ngspice(self, deck_text):

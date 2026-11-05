@@ -2,6 +2,7 @@
 # They need conexus_hatf_tech (HATF-TECH-M0.3) importable and no simulator: a fake ngspice
 # prints the measures. Run from the repository root: python -m pytest tests/test_conexus_ngspice.py
 
+import json
 import os
 import stat
 import textwrap
@@ -103,8 +104,11 @@ def test_meaz_combination_is_the_same_for_both_simulators():
 
 
 FAKE_NGSPICE = """#!/bin/sh
-# Prints measures as ngspice does; the delay follows the swept nmos width.
-w=$(sed -n 's/^.PARAM inv_1_nmos = //p' ../sweep_data.l)
+# Prints measures as ngspice does; the delay follows the swept nmos width. Each run is counted in ../../../runs.txt.
+w=$(sed -n 's/^.PARAM inv_1_nmos = //p' sweep_point.l)
+echo "$w" >> ../../../runs.txt
+grep -q 'includes.ngspice.points.l' "$2" || echo "meas_total_tfall: wrong includes"
+grep -q '^.INCLUDE "sweep_point.l"' "$2" || echo "meas_total_tfall: no point include"
 echo "Note: Compatibility modes selected: hs a"
 echo "meas_total_tfall    =  $w targ=  1e-9 trig=  1e-9"
 echo "meaz1_delay         =  1.0e-11"
@@ -113,24 +117,61 @@ echo "Error: measure  meas_current  : no such vector"
 """
 
 
-def test_ngspice_runs_one_deck_per_point_and_returns_coffe_measures(arch, monkeypatch):
-    pytest.importorskip("conexus_hatf_tech.simulators.decks")
-    import coffe.ngspice_interface as ngspice_interface
-
+def _fake(arch):
     fake = arch / "ngspice"
     fake.write_text(FAKE_NGSPICE)
     fake.chmod(fake.stat().st_mode | stat.S_IEXEC)
+    return str(fake)
+
+
+def test_ngspice_runs_each_point_in_its_folder_in_parallel_and_returns_coffe_measures(arch, monkeypatch):
+    pytest.importorskip("conexus_hatf_tech.simulators.decks")
+    import coffe.ngspice_interface as ngspice_interface
+
     monkeypatch.chdir(arch)  # COFFE runs from the architecture folder
-    interface = ngspice_interface.NgspiceInterface(executable=str(fake), osdi_path="")
+    interface = ngspice_interface.NgspiceInterface(executable=_fake(arch), osdi_path="", workers=2)
     sweep = {"inv_1_nmos": ["4.5e-08", "9e-08"], "inv_1_pmos": ["9e-08", "9e-08"]}
     measured = interface.run(str(arch / "test" / "test.sp"), sweep)
-    assert measured["meas_total_tfall"] == ["4.5e-08", "9e-08"]
+    assert measured["meas_total_tfall"] == ["4.5e-08", "9e-08"]  # in point order, whatever finished first
     assert measured["meas_current"] == ["failed", "failed"] and measured["meas_delay"] == ["2.0e-11", "2.0e-11"]
     assert interface.get_num_simulations_performed() == 2
-    records = (arch / "test" / "ngspice_runs.jsonl").read_text().splitlines()
-    assert len(records) == 2 and '"port_probe", "count": 4' in records[0] and '"status"' in records[0]
-    assert (arch / "test" / ".spiceinit").read_text() == "set ngbehavior=hsa\n"
-    assert os.path.isfile(arch / "test" / "test.coffe.ngspice.lis")
+    records = [json.loads(line) for line in (arch / "test" / "ngspice_runs.jsonl").read_text().splitlines()]
+    assert len(records) == 2 and {"rule": "port_probe", "count": 4} in records[0]["coffe_rules"] and records[0]["status"]["meas_current"] == "failed"
+    folders = sorted((arch / "test" / "points").iterdir())
+    assert [f.name for f in folders] == ["test." + r["point_id"] for r in records]
+    assert [p.name for p in folders[0].iterdir()] == ["record.json"]  # deck and log not kept by default
+    assert "set ngbehavior=hsa" not in (arch / "includes.ngspice.points.l").read_text() and "sweep_data.l" not in (arch / "includes.ngspice.points.l").read_text()
+
+
+def test_a_stopped_sweep_resumes_by_point_id(arch, monkeypatch):
+    pytest.importorskip("conexus_hatf_tech.simulators.decks")
+    import coffe.ngspice_interface as ngspice_interface
+
+    monkeypatch.chdir(arch)
+    interface = ngspice_interface.NgspiceInterface(executable=_fake(arch), osdi_path="", workers=2)
+    interface.run(str(arch / "test" / "test.sp"), {"inv_1_nmos": ["4.5e-08"], "inv_1_pmos": ["9e-08"]})
+    measured = interface.run(str(arch / "test" / "test.sp"), {"inv_1_nmos": ["4.5e-08", "9e-08"], "inv_1_pmos": ["9e-08", "9e-08"]})
+    assert measured["meas_total_tfall"] == ["4.5e-08", "9e-08"]
+    assert (arch / "runs.txt").read_text().split() == ["4.5e-08", "9e-08"]  # point 0 was not run again
+    last = [json.loads(line) for line in (arch / "test" / "ngspice_runs.jsonl").read_text().splitlines()][-2:]
+    assert [r["resumed"] for r in last] == [True, False]
+    (arch / "test" / "test.sp").write_text(DECK.replace("2n 4n", "2n 5n"))  # another deck: no reuse
+    interface.run(str(arch / "test" / "test.sp"), {"inv_1_nmos": ["4.5e-08"], "inv_1_pmos": ["9e-08"]})
+    assert (arch / "runs.txt").read_text().split() == ["4.5e-08", "9e-08", "4.5e-08"]
+    (arch / "basic_subcircuits.l").write_text(LIBRARY.replace("Rx n_x n_out 1", "Rx n_x n_out 2"))  # another library: no reuse
+    interface.run(str(arch / "test" / "test.sp"), {"inv_1_nmos": ["4.5e-08"], "inv_1_pmos": ["9e-08"]})
+    assert len((arch / "runs.txt").read_text().split()) == 4
+
+
+def test_points_can_live_outside_coffes_output_folder(arch, monkeypatch, tmp_path):
+    pytest.importorskip("conexus_hatf_tech.simulators.decks")
+    import coffe.ngspice_interface as ngspice_interface
+
+    monkeypatch.chdir(arch)
+    monkeypatch.setenv("COFFE_NGSPICE_POINTS", str(tmp_path / "cache"))
+    interface = ngspice_interface.NgspiceInterface(executable=_fake(arch), osdi_path="")
+    interface.run(str(arch / "test" / "test.sp"), {"inv_1_nmos": ["4.5e-08"], "inv_1_pmos": ["9e-08"]})
+    assert len(list((tmp_path / "cache" / "test").glob("test.0000-*/record.json"))) == 1 and not (arch / "test" / "points").exists()
 
 
 def test_the_simulator_is_chosen_by_the_environment(monkeypatch):
