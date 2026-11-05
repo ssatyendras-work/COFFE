@@ -285,7 +285,7 @@ uptime
 """
         pull = HEAD.format(title="05: run ON THE THINKPAD: fetch reports, timing, logs and point records (not the point folders or COFFE's work files).") + """mkdir -p "$KIT/pulled"
 rsync -a --prune-empty-dirs --include '*/' --exclude 'points/' --exclude 'arch/' --exclude 'probe/' \\
-    --include 'report.txt' --include 'timing.json' --include '*.log' --include '*.yaml' --include '*.json' --include 'records.jsonl.gz' --exclude '*' \\
+    --include 'report.txt' --include '*.report.txt' --include 'timing.json' --include '*.log' --include '*.yaml' --include '*.json' --include 'records.jsonl.gz' --exclude '*' \\
     "$REMOTE:$RESULTS/" "$KIT/pulled/"
 find "$KIT/pulled" -name timing.json | sed 's|/timing.json||' | sort
 """
@@ -382,7 +382,7 @@ done; done
         pull = HEAD.format(title="06: run ON THE THINKPAD: fetch reports, timing, logs and point records. SLURM_LOGIN=user@host bash 06_pull.sh") + login_needed + """RRESULTS="$(ssh "$SLURM_LOGIN" "echo $ROOT_TEMPLATE")/runs/coffe/$KIT_NAME"
 mkdir -p "$KIT/pulled"
 rsync -a --prune-empty-dirs --include '*/' --exclude 'points/' --exclude 'arch/' --exclude 'probe/' \\
-    --include 'report.txt' --include 'timing.json' --include '*.log' --include '*.out' --include '*.yaml' --include '*.json' --include 'records.jsonl.gz' --exclude '*' \\
+    --include 'report.txt' --include '*.report.txt' --include 'timing.json' --include '*.log' --include '*.out' --include '*.yaml' --include '*.json' --include 'records.jsonl.gz' --exclude '*' \\
     "$SLURM_LOGIN:$RRESULTS/" "$KIT/pulled/"
 find "$KIT/pulled" -name timing.json | sed 's|/timing.json||' | sort
 """

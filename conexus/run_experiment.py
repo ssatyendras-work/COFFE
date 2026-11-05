@@ -6,7 +6,8 @@
 # Tier A (minutes): COFFE without sizing (-n), then sb_mux at its initial sizes and as a 2-point sweep
 # (conexus/subcircuit_probe.py). Tier B (hours): COFFE's full sizing (-i ITERATIONS, the archived flut0 run used 4).
 # The simulator is COFFE_SIMULATOR (hspice: released COFFE2 at --coffe-root, e.g. master at the pin; ngspice: this
-# branch). <out> gets the resolved input, COFFE's output folder (arch/), report.txt, timing.json and, for ngspice,
+# branch). <out> gets the resolved input, COFFE's output folder (arch/), report.txt (also as <run name>.report.txt, for
+# xmorph's coffe-report:<path> number source), timing.json and, for ngspice,
 # records.jsonl.gz (every point's record). timing.json: wall and CPU time (this process's children: COFFE and every
 # simulator run), simulations, seconds per simulation, host, CPU model, CPUs allowed, and the settings.
 
@@ -114,6 +115,8 @@ class Experiment(object):
         report = os.path.join(self.out, "arch", "report.txt")
         if os.path.isfile(report):
             shutil.copyfile(report, os.path.join(self.out, "report.txt"))
+            # Also under the run's name: xmorph's coffe-report:<path> source names itself after the file's stem.
+            shutil.copyfile(report, os.path.join(self.out, os.path.basename(self.out) + ".report.txt"))
         self.collect_records()
         timing = self.timing(report)
         with open(os.path.join(self.out, "timing.json"), "w") as handle:
