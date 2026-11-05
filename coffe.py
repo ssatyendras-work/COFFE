@@ -40,6 +40,7 @@ import argparse
 import time
 import coffe.fpga as fpga
 import coffe.spice as spice
+import coffe.ngspice_interface as ngspice_interface
 import coffe.tran_sizing as tran_sizing
 import coffe.utils as utils
 import coffe.vpr
@@ -107,8 +108,8 @@ else:
   # while running HSPICE, this variable is so that we can get back to our starting point
   default_dir = os.getcwd()
 
-  # Create an HSPICE interface
-  spice_interface = spice.SpiceInterface()
+  # Create a SPICE interface: HSPICE (default) or ngspice, chosen by COFFE_SIMULATOR
+  spice_interface = ngspice_interface.make_interface()
 
   # Record start time
   total_start_time = time.time()

@@ -1,0 +1,46 @@
+  TILE AREA CONTRIBUTIONS
+  -----------------------
+  Block             Total Area (um^2)   Fraction of total tile area
+  Tile              887.2               100%
+  LUT               234.54              26.436%
+  FF                10.458              1.179%
+  BLE output        11.851              1.336%
+  Local mux         140.907             15.882%
+  Connection block  189.265             21.333%
+  Switch block      300.179             33.834%
+  Non-active        0.0                 0.0%
+
+  VPR DELAYS
+  ----------
+  Path                                            Delay (ps)
+  Tdel (routing switch)                           1.56997e-10
+  T_ipin_cblock (connection block mux)            1.29992e-10
+  CLB input -> BLE input (local CLB routing)      4.56383e-11
+  LUT output -> BLE input (local feedback)        1.16933e-10
+  LUT output -> CLB output (logic block output)   4.20981e-11
+  lut_a                                           5.002137999999999e-10
+  lut_b                                           4.91464e-10
+  lut_c                                           5.176852e-10
+  lut_d                                           3.17925e-10
+  lut_e                                           3.156827e-10
+  lut_f                                           3.038628e-10
+
+  VPR AREAS
+  ----------
+  grid_logic_tile_area                            13786.551981956796
+  ipin_mux_trans_size (connection block mux)      1.2559575028878802
+  mux_trans_size (routing switch)                 1.5082318657594311
+  buf_size (routing switch)                       13.706095836683257
+
+  SUMMARY
+  -------
+  Tile Area                            887.2 um^2
+  Representative Critical Path Delay   175.96 ps
+  Cost (area^1 x delay^1)              0.15611
+
+|--------------------------------------------------------------------------------------------------|
+
+Number of HSPICE simulations performed: 24
+Total time elapsed: 0 hours 12 minutes 19 seconds
+
+exit 0

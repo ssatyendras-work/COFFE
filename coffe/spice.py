@@ -3,6 +3,7 @@
 
 import os
 import subprocess
+import sys
 import coffe.utils as utils
 
 # All .sp files should be created to use sweep_data.l to set parameters.
@@ -305,27 +306,41 @@ class SpiceInterface(object):
         
         mt0_file.close()
 
-        # This part is added to support having tow different fanins (e.g. ram rowdecoder)
-        # If this happens to any other circuit, you should name the delays with mez1 and meaz2
-        # the rest is simply the same.
-        if meaz3counter != 0:
-            for x in range(0,len(meaz1_names)):
-                newname = meaz3_names[x].replace("meaz3_", "meas_")
-                measurements[newname] = max(measurements[meaz1_names[x]],measurements[meaz2_names[x]],measurements[meaz3_names[x]])
-            return measurements             
-        if len(meaz1_names) !=0 and len(meaz2_names) != 0:
-            if len(meaz1_names) != len(meaz2_names):
-                    sys.exit(-1)
-            for x in range(0,len(meaz1_names)):
-                newname = meaz1_names[x].replace("meaz1_", "meas_")
-                measurements[newname] = max(measurements[meaz1_names[x]],measurements[meaz2_names[x]])
-        elif len(meaz1_names) !=0:
-            for x in range(0,len(meaz1_names)):
-                newname = meaz1_names[x].replace("meaz1_", "meas_")
-                measurements[newname] = measurements[meaz1_names[x]]
-        elif len(meaz2_names) !=0:
-            for x in range(0,len(meaz2_names)):
-                newname = meaz2_names[x].replace("meaz2_", "meas_")
-                measurements[newname] = measurements[meaz2_names[x]]
+        return combine_meaz(measurements, meas_names)
 
-        return measurements         
+
+def combine_meaz(measurements, meas_names):
+    """
+    Combine the meaz1..meaz3 measurements of circuits with several fanins (e.g. the RAM row
+    decoder) into their meas_ names, as parse_mt0 always did. Shared with the ngspice
+    interface (coffe/ngspice_interface.py) so both simulators combine the same way.
+    """
+
+    meaz1_names = [name for name in meas_names if "meaz1" in name]
+    meaz2_names = [name for name in meas_names if "meaz2" in name]
+    meaz3_names = [name for name in meas_names if "meaz3" in name]
+
+    # This part is added to support having tow different fanins (e.g. ram rowdecoder)
+    # If this happens to any other circuit, you should name the delays with mez1 and meaz2
+    # the rest is simply the same.
+    if len(meaz3_names) != 0:
+        for x in range(0,len(meaz1_names)):
+            newname = meaz3_names[x].replace("meaz3_", "meas_")
+            measurements[newname] = max(measurements[meaz1_names[x]],measurements[meaz2_names[x]],measurements[meaz3_names[x]])
+        return measurements             
+    if len(meaz1_names) !=0 and len(meaz2_names) != 0:
+        if len(meaz1_names) != len(meaz2_names):
+                sys.exit(-1)
+        for x in range(0,len(meaz1_names)):
+            newname = meaz1_names[x].replace("meaz1_", "meas_")
+            measurements[newname] = max(measurements[meaz1_names[x]],measurements[meaz2_names[x]])
+    elif len(meaz1_names) !=0:
+        for x in range(0,len(meaz1_names)):
+            newname = meaz1_names[x].replace("meaz1_", "meas_")
+            measurements[newname] = measurements[meaz1_names[x]]
+    elif len(meaz2_names) !=0:
+        for x in range(0,len(meaz2_names)):
+            newname = meaz2_names[x].replace("meaz2_", "meas_")
+            measurements[newname] = measurements[meaz2_names[x]]
+
+    return measurements
