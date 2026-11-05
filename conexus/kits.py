@@ -483,8 +483,8 @@ you run these, in order; each stops at the first error, can be run again and kee
             r, root = c["remote"], c["root"]
             head = """# Kit %s
 
-X-PACE G0.4c: COFFE2 sizes every tile of P1's grid it can express (%d tiles; %d it cannot are in `unsupported.json`,
-with why and the closest it can) on ngspice, at the archived flut0 run's settings (22 nm PTM bulk, pass transistors,
+X-PACE G0.4c: COFFE2 sizes P1's %d tiles (K 4/5/6 x N 4/6/8/10 x {F0C0, F1C0, F1C1, F1C2}; the %d F0-C1 tiles of the
+original grid are dropped by decision, see `unsupported.json`) on ngspice, at the archived flut0 run's settings (22 nm PTM bulk, pass transistors,
 4 sizing iterations) with P1's routing (W 300, L 4, Fc_in 0.15, Fc_out 0.10). COFFE fork `conexus-ngspice` at `%s`,
 hatf-tech `%s`, image `%s`. %s tiles at once with %s CPUs each (sweep points in parallel), largest clusters first;
 new tiles wait while the 1-minute load is above %s. Each tile's `report.txt` holds COFFE2's VPR delays and areas

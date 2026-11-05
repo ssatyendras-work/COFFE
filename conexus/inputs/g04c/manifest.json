@@ -494,63 +494,63 @@
  "unsupported": [
   {
    "tile": "k4-N4-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k4-N6-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k4-N8-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k4-N10-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k5-N4-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k5-N6-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k5-N8-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k5-N10-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k6-N4-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k6-N6-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k6-N8-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   },
   {
    "tile": "k6-N10-F0-C1",
-   "why": "COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible with non-fracturable LUTs)",
-   "closest": "F0-C0 of the same K and N for the logic, and the carry chain of F1-C1 at the same K and N (K5, K6) for the adder; or extend the fork with a carry chain on non-fracturable LUTs"
+   "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+   "closest": "none: not in P1's 48 tiles"
   }
  ]
 }

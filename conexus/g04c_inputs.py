@@ -4,10 +4,11 @@
 #   python conexus/g04c_inputs.py [--export <xmorph vpr-export of p1-g05>] [--out conexus/inputs/g04c]
 #
 # Per tile: K, N, cluster inputs I by P1's rule (F0: Betz-Rose ceil_even(K(N+1)/2); F1: ceil_even(2K/3 N); checked
-# against the export's records when --export is given), fracturable LUTs for F1, carry chain for C1/C2 (FAs per
+# against the export's records when --export is given), fracturable LUTs for F1 (K4: two 3-LUT halves, coffe/lut3.py),
+# carry chain for C1/C2 (FAs per
 # BLE = 1 or 2, flut0's carry type). Routing as the grid: W 300, L 4, Fc_in 0.15, Fc_out 0.10. Everything else is
-# flut0's (conexus/inputs/flut0.yaml). Tiles COFFE2 cannot express are listed in manifest.json with why and the
-# closest it can, not written.
+# flut0's (conexus/inputs/flut0.yaml). The 12 F0-C1 tiles are not written: dropped from P1 by decision, listed in
+# manifest.json with why (P1 is 48 tiles: K 4/5/6 x N 4/6/8/10 x {F0C0, F1C0, F1C1, F1C2}).
 
 import argparse
 import json
@@ -38,10 +39,10 @@ def expressible(k, fracture, carry):
     """ None when COFFE2 can size the tile, else (why, closest COFFE2 can). """
 
     if fracture == "F0" and carry != "C0":
-        return ("COFFE2 builds carry chains only with fracturable LUTs (utils.check_arch_params: carry chains are not compatible "
-                "with non-fracturable LUTs)",
-                "F0-C0 of the same K and N for the logic, and the carry chain of F1-%s at the same K and N (K5, K6) for the adder; "
-                "or extend the fork with a carry chain on non-fracturable LUTs" % carry)
+        return ("dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 "
+                "iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. "
+                "COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
+                "none: not in P1's 48 tiles")
     # K4-F1: two 3-LUT halves, built by the fork's 3-LUT generator (coffe/lut3.py, bb8af93)
     return None
 
@@ -95,7 +96,7 @@ def main():
     parser.add_argument("--out", default=os.path.join(HERE, "inputs", "g04c"))
     a = parser.parse_args()
     m = write_inputs(a.out, a.export)
-    print("%d tiles written, %d COFFE2 cannot express -> %s" % (len(m["tiles"]), len(m["unsupported"]), a.out))
+    print("%d tiles written, %d left out (manifest.json says why) -> %s" % (len(m["tiles"]), len(m["unsupported"]), a.out))
 
 
 if __name__ == "__main__":
