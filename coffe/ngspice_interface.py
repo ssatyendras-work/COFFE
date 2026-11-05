@@ -21,8 +21,9 @@
 #   COFFE_NGSPICE        ngspice executable (default: ngspice on PATH)
 #   COFFE_NGSPICE_OSDI   OSDI library to load, empty for none (bulk/PTM decks need none)
 #   COFFE_NGSPICE_TIMEOUT  seconds per point (default 600)
-#   COFFE_NGSPICE_THREADS  OpenMP threads per ngspice run (default 1: one sweep point per core;
-#                          more threads only crowd a shared host's load)
+#   COFFE_NGSPICE_THREADS  ngspice threads per run ("set num_threads" in .spiceinit; default 1: one sweep point
+#                          per core). ngspice ignores OMP_NUM_THREADS and otherwise threads over every core,
+#                          which a container's CPU quota throttles: sb_mux 5.95 s at 2 CPUs, 0.85 s with one thread
 #   COFFE_NGSPICE_WORKERS  sweep points run at once (default 1)
 #   COFFE_NGSPICE_KEEP     1 keeps each point's deck and log beside its record (default: record only)
 #   COFFE_NGSPICE_POINTS   folder of the point folders (default <deck folder>/points); put it outside
@@ -79,6 +80,7 @@ class NgspiceInterface(spice.SpiceInterface):
         self.workers = max(1, int(workers or os.environ.get("COFFE_NGSPICE_WORKERS", "1")))
         self.keep = os.environ.get("COFFE_NGSPICE_KEEP", "") == "1"
         self.points = os.environ.get("COFFE_NGSPICE_POINTS", "")
+        self.threads = int(os.environ.get("COFFE_NGSPICE_THREADS", "1"))
         # ngspice copies of the libraries, per includes file (one per architecture folder).
         self.libraries = {}
 
@@ -164,6 +166,8 @@ class NgspiceInterface(spice.SpiceInterface):
         deck = folder / sp_path.name
         deck.write_text(text)
         prepared = self.foreign.prepare(deck, folder, point=point)
+        with open(folder / ".spiceinit", "a") as spiceinit:
+            spiceinit.write("set num_threads=%s\n" % self.threads)
         start = time.time()
         log = self._simulate(prepared.deck)
         seconds = round(time.time() - start, 2)

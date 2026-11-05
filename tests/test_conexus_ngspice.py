@@ -114,6 +114,7 @@ w=$(sed -n 's/^.PARAM inv_1_nmos = //p' sweep_point.l)
 echo "$w" >> ../../../runs.txt
 grep -q 'includes.ngspice.points.l' "$2" || echo "meas_total_tfall: wrong includes"
 grep -q '^.INCLUDE "sweep_point.l"' "$2" || echo "meas_total_tfall: no point include"
+grep -q '^set num_threads=1$' .spiceinit || echo "meas_total_tfall: threads not pinned"
 echo "Note: Compatibility modes selected: hs a"
 echo "meas_total_tfall    =  $w targ=  1e-9 trig=  1e-9"
 echo "meaz1_delay         =  1.0e-11"

@@ -45,6 +45,12 @@ Transmission gates (`evidence/tg_sb_mux_*`, `bulk_22nm_tg.yaml`, run before `tra
 `switch_type: transmission_gate` at COFFE's initial sizes and an 8-point sweep of its 8 transistors (1x to 2x):
 9 runs, every measure ok; 206.1 / 159.2 ps fall / rise falling to 155.3 / 124.9 ps; 62.6 s per point.
 
+Threads: ngspice ignores OMP_NUM_THREADS and threads over every core; under a container's CPU quota that is
+throttled (sb_mux at 2 CPUs: 5.95 s default, 0.85 s with `set num_threads=1`). Each point's `.spiceinit` now pins
+`COFFE_NGSPICE_THREADS` (1) and points run in parallel instead. Single-threaded, one CPU, sb_mux per point:
+1 ps 3.8 s, 5 ps 0.83 s, 20 ps 0.27 s (the archived HSPICE run averaged 0.175 s per simulation). The time-step
+figures below were measured before this, with the throttled default; their accuracy holds.
+
 Time step: ngspice caps its step at `.TRAN`'s print step (1 ps), HSPICE does not. The pass-transistor
 sb_mux deck, one CPU: 54.3 s as written; maximum step 5 ps 11.3 s (total delays within 0.06 %), 20 ps
 3.4 s (within 0.9 %), 100 ps 1.6 s (19 % off: too coarse). `tran_tmax` appends 5 ps by default.
