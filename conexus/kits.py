@@ -125,7 +125,7 @@ class Kit(object):
             "IMAGE='%s'" % self.defaults["image"]["reference"], "ARCHIVE_NAME='%s'" % os.path.basename(archive),
             "ARCHIVE_LOCAL='%s'" % archive, "RUNS='%s'" % " ".join(r["name"] for r in self.runs),
             "INPUT='%s'" % c.get("input", "conexus/inputs/flut0.yaml"), "ITERATIONS='%d'" % c.get("iterations", 4),
-            "A_CPUS='%d'" % c["tier_a"]["cpus"], "B_CPUS='%d'" % c["tier_b"]["cpus"], "MAX_LOAD='%g'" % c.get("max_load", 96),
+            "A_CPUS=\"${A_CPUS:-%d}\"" % c["tier_a"]["cpus"], "B_CPUS=\"${B_CPUS:-%d}\"" % c["tier_b"]["cpus"], "MAX_LOAD=\"${MAX_LOAD:-%g}\"" % c.get("max_load", 96),
         ]
         for run in self.runs:
             lines.append("TMAX_%s='%s'" % (run["name"].replace("-", "_"), run.get("tmax", "5p")))
