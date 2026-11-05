@@ -35,3 +35,16 @@ kits:
       module: udocker
     tier_a: {cpus: 4, mem: 8G, time: "01:00:00", estimate: "about 1 minute per task, plus queue time"}
     tier_b: {cpus: 16, mem: 32G, time: "2-00:00:00", estimate: "about 3-6 h at 5 ps and 1-2 h at 20 ps per task"}
+  - name: coffe-g04c-60tile-sizing-hyperion
+    where: hyperion
+    engine: docker
+    remote: siva@hyperion
+    root: /home/siva/conexus
+    tiles: conexus/inputs/g04c
+    smoke_tile: k5-N4-F1-C1
+    tmax: 5p
+    slots: 4
+    iterations: 4
+    max_load: 96
+    tier_a: {cpus: 2, estimate: "about a minute"}
+    tier_b: {cpus: 8, estimate: "about 2-4 days at 5p, about 1-1.5 days at 20p (estimate from flut0's simulation count; tier B of the flut0 kit replaces it)"}

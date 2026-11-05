@@ -110,7 +110,14 @@ class Kit(object):
     def __init__(self, config, defaults):
 
         self.config, self.defaults = config, defaults
-        self.name, self.engine, self.runs = config["name"], config["engine"], config["runs"]
+        self.name, self.engine = config["name"], config["engine"]
+        if "tiles" in config:  # one run per tile input, in the manifest's order (longest first)
+            with open(os.path.join(COFFE, config["tiles"], "manifest.json")) as handle:
+                manifest = json.load(handle)
+            self.runs = [{"name": t, "input": "%s/%s.yaml" % (config["tiles"], t)} for t in manifest["order"]]
+            self.unsupported = manifest["unsupported"]
+        else:
+            self.runs, self.unsupported = config["runs"], []
         if self.engine == "udocker" and any(c in config["slurm"]["container"] for c in "/. []"):
             raise ValueError("udocker container names may not hold '/', '.', spaces or brackets: " + config["slurm"]["container"])
         return
@@ -129,8 +136,13 @@ class Kit(object):
             "INPUT='%s'" % c.get("input", "conexus/inputs/flut0.yaml"), "ITERATIONS='%d'" % c.get("iterations", 4),
             "A_CPUS=\"${A_CPUS:-%d}\"" % c["tier_a"]["cpus"], "B_CPUS=\"${B_CPUS:-%d}\"" % c["tier_b"]["cpus"], "MAX_LOAD=\"${MAX_LOAD:-%g}\"" % c.get("max_load", 96),
         ]
+        if "tiles" in c:
+            lines += ["TMAX=\"${TMAX:-%s}\"  # maximum ngspice time step for every tile (flut0 tier B decides 5p or 20p)" % c.get("tmax", "5p"),
+                      "SLOTS=\"${SLOTS:-%d}\"  # tiles at once" % c["slots"], "SMOKE_TILE='%s'" % c["smoke_tile"]]
         for run in self.runs:
-            lines.append("TMAX_%s='%s'" % (run["name"].replace("-", "_"), run.get("tmax", "5p")))
+            lines.append("TMAX_%s=\"${TMAX:-%s}\"" % (run["name"].replace("-", "_"), run.get("tmax", "5p")) if "tiles" in c else "TMAX_%s='%s'" % (run["name"].replace("-", "_"), run.get("tmax", "5p")))
+            if "input" in run:
+                lines.append("INPUT_%s='%s'" % (run["name"].replace("-", "_"), run["input"]))
         if self.engine == "docker":
             lines += ["REMOTE=\"${REMOTE:-%s}\"" % c["remote"], "ROOT=\"${ROOT:-%s}\"" % c["root"]]
         else:
@@ -157,7 +169,12 @@ class Kit(object):
         shutil.copyfile(os.path.join(COFFE, ARCHIVE_REPORT), os.path.join(kit, "tools", "flut_report.archive.txt"))
         with open(os.path.join(kit, "kit.env"), "w") as handle:
             handle.write(self.env(names, archive))
-        scripts = DockerScripts(self).scripts() if self.engine == "docker" else UdockerScripts(self).scripts()
+        if "tiles" in self.config:
+            scripts = TileQueueScripts(self).scripts()
+            with open(os.path.join(kit, "unsupported.json"), "w") as handle:
+                json.dump(self.unsupported, handle, indent=1)
+        else:
+            scripts = DockerScripts(self).scripts() if self.engine == "docker" else UdockerScripts(self).scripts()
         for name, text in scripts.items():
             path = os.path.join(kit, name)
             with open(path, "w") as handle:
@@ -374,6 +391,76 @@ find "$KIT/pulled" -name timing.json | sed 's|/timing.json||' | sort
                 "06_pull.sh": pull, "07_check.sh": CHECK}
 
 
+class TileQueueScripts(DockerScripts):
+    """ Hyperion: every tile's full sizing, SLOTS tiles at once with B_CPUS points each, longest first, behind the load
+    guard; a detached queue that resumes (finished tiles are skipped, finished points not run again). """
+
+    def scripts(self):
+        base = DockerScripts.scripts(self)
+        k = self.kit.name
+        run_tile = """run_tile() {  # run_tile <tier> <tile> <cpus>: one tile in the foreground
+    local tier="$1" tile="$2" cpus="$3" v="INPUT_${2//-/_}"
+    export TIER="$tier" OUT="$RESULTS/tier$tier/$tile" WORKERS="$cpus" TMAX="${TMAX}" INPUT="${!v}"
+    mkdir -p "$OUT"
+    if [ -f "$OUT/timing.json" ] && [ -f "$OUT/report.txt" ]; then echo "$(date -Is) $tile tier $tier: done before"; return 0; fi
+    docker rm -f "%(k)s-$tier-$tile" >/dev/null 2>&1 || true
+    echo "$(date -Is) start $tile tier $tier ($cpus CPUs, max step $TMAX)"
+    docker run --rm --init --name "%(k)s-$tier-$tile" --cpus "$cpus" --user "$(id -u):$(id -g)" -v "$ROOT:$ROOT" \\
+        %(env)s -e "SRC=$SRC" -e "OUT=$OUT" -e "TIER=$tier" -e "INPUT=$INPUT" -e "ITERATIONS=$ITERATIONS" \\
+        --entrypoint bash "$IMAGE" -c '%(cmd)s > "$OUT/runner.log" 2>&1'
+    echo "$(date -Is) end $tile tier $tier rc=$?"
+}
+""" % {"k": k, "env": container_env("-e "), "cmd": RUN_IN_CONTAINER}
+        load = """(cd "$ROOT/collaterals/images" && sha256sum -c "$ARCHIVE_NAME.sha256")
+docker image inspect "$IMAGE" >/dev/null 2>&1 || docker load -i "$ROOT/collaterals/images/$ARCHIVE_NAME"
+"""
+        smoke = HEAD.format(title="03: run ON HYPERION: tier A on one small tile (COFFE without sizing, sb_mux 2-point sweep): setup and time per simulation, a minute.") + UNPACK + run_tile + load + """unpack
+run_tile A "$SMOKE_TILE" "$A_CPUS"; tail -1 "$RESULTS/tierA/$SMOKE_TILE/runner.log"
+echo "== done: next, from the ThinkPad: bash 05_pull.sh && bash 06_check.sh, then on Hyperion: bash $KITDIR/04_start.sh"
+"""
+        queue = """#!/usr/bin/env bash
+# The tile queue (started detached by 04_start.sh): SLOTS tiles at once, longest first; each waits while the 1-minute load is above MAX_LOAD.
+set -uo pipefail
+KIT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$KIT/kit.env"
+""" + UNPACK + run_tile + """unpack
+echo $$ > "$RESULTS/queue.pid"
+trap 'docker ps -q --filter "name=^%(k)s-B-" | xargs -r docker stop >/dev/null; rm -f "$RESULTS/queue.pid"; echo "$(date -Is) queue stopped"; exit 143' TERM INT
+one() {
+    while awk -v m="$MAX_LOAD" '{exit !($1 > m)}' /proc/loadavg; do echo "$(date -Is) load $(cut -d' ' -f1 /proc/loadavg) > $MAX_LOAD: $1 waits"; sleep 60; done
+    run_tile B "$1" "$B_CPUS"
+}
+export -f one run_tile unpack tmax_of; export KIT ROOT RESULTS SRC KITDIR IMAGE ITERATIONS MAX_LOAD B_CPUS TMAX $(compgen -v | grep '^INPUT_')
+printf '%%s\n' $RUNS | xargs -P "$SLOTS" -I{} bash -c 'one "$@"; sleep 20' _ {}
+rm -f "$RESULTS/queue.pid"; echo "$(date -Is) queue done"
+""" % {"k": k}
+        start = HEAD.format(title="04: run ON HYPERION: start the tile queue detached (survives logout). Run again to resume. TMAX=20p bash 04_start.sh to change the step.") + load + """mkdir -p "$RESULTS"
+if [ -f "$RESULTS/queue.pid" ] && kill -0 "$(cat "$RESULTS/queue.pid")" 2>/dev/null; then echo "queue already running"; exit 0; fi
+TMAX="$TMAX" setsid nohup bash "$KIT/queue.sh" >> "$RESULTS/queue.log" 2>&1 < /dev/null &
+sleep 2; echo "queue started ($SLOTS tiles at once, $B_CPUS CPUs each, max step $TMAX); log $RESULTS/queue.log; follow with bash $KITDIR/status.sh"
+"""
+        status = HEAD.format(title="status: run ON HYPERION: tiles finished, running, point records so far.") + """docker ps --filter "name=^$KIT_NAME-" --format '{{.Names}}  {{.Status}}'
+done=0; for t in $RUNS; do [ -f "$RESULTS/tierB/$t/timing.json" ] && done=$((done + 1)); done
+echo "tiles finished: $done of $(echo $RUNS | wc -w)"
+for d in $(docker ps --filter "name=^$KIT_NAME-B-" --format '{{.Names}}' | sed "s/^$KIT_NAME-B-//"); do
+    printf '%%s: %%s point records\n' "$d" "$(find "$RESULTS/tierB/$d/points" -name record.json 2>/dev/null | wc -l)"; done
+tail -3 "$RESULTS/queue.log" 2>/dev/null; uptime
+"""
+        stop = HEAD.format(title="stop: run ON HYPERION: stop the queue and its containers (finished points are kept; 04_start.sh resumes).") + """[ -f "$RESULTS/queue.pid" ] && kill -TERM "$(cat "$RESULTS/queue.pid")" 2>/dev/null || true
+docker ps -q --filter "name=^$KIT_NAME-" | xargs -r docker stop
+"""
+        check = CHECK.replace("compare.py\" $RUNS_FOUND --archive \"$KIT/tools/flut_report.archive.txt\"", "compare.py\" $RUNS_FOUND")
+        check = check.replace('echo "Archived HSPICE reference: 162,426 simulations in 7 h 54 min (0.175 s per simulation, one CPU) on the authors\' machine."\n', "")
+        check = check.replace("--archive \"$KIT/tools/flut_report.archive.txt\" ", "")
+        check += """echo "== per tile (tier B): tile area, representative critical path"
+for f in $(find "$KIT/pulled" -path '*tierB*' -name report.txt | sort); do
+    printf '%%-16s %%s  %%s\n' "$(basename "$(dirname "$f")")" "$(grep -m1 'Tile Area' "$f" | awk '{print $3}')" "$(grep -m1 'Representative Critical Path' "$f" | awk '{print $5}')"; done
+echo "Tiles COFFE2 cannot express: $KIT/unsupported.json"
+"""
+        return {"01_probe.sh": base["01_probe.sh"], "02_push.sh": base["02_push.sh"].replace("03_tier_a.sh", "03_smoke.sh"), "03_smoke.sh": smoke,
+                "04_start.sh": start, "queue.sh": queue, "status.sh": status, "stop.sh": stop, "05_pull.sh": base["05_pull.sh"], "06_check.sh": check}
+
+
 class Readme(object):
     """ 00_README.md of a kit. """
 
@@ -392,7 +479,32 @@ records when started again. Results: reports, timing.json, logs and point record
 archived HSPICE flut0 run (1255.13 um2, 151.62 ps, 162,426 simulations in 7 h 54 min). Claude does not log in anywhere:
 you run these, in order; each stops at the first error, can be run again and keeps a log in logs/.
 """ % (k.name, f["coffe_commit"][:7], f["hatf_tech_commit"][:7], f["image"], runs, c["tier_a"]["cpus"], c.get("iterations", 4), c["tier_b"]["cpus"])
-        if k.engine == "docker":
+        if "tiles" in c:
+            r, root = c["remote"], c["root"]
+            head = """# Kit %s
+
+X-PACE G0.4c: COFFE2 sizes every tile of P1's grid it can express (%d tiles; %d it cannot are in `unsupported.json`,
+with why and the closest it can) on ngspice, at the archived flut0 run's settings (22 nm PTM bulk, pass transistors,
+4 sizing iterations) with P1's routing (W 300, L 4, Fc_in 0.15, Fc_out 0.10). COFFE fork `conexus-ngspice` at `%s`,
+hatf-tech `%s`, image `%s`. %s tiles at once with %s CPUs each (sweep points in parallel), largest clusters first;
+new tiles wait while the 1-minute load is above %s. Each tile's `report.txt` holds COFFE2's VPR delays and areas
+(what xmorph XM-M6's COFFE2-report source reads) and `timing.json`. Max step `TMAX`, default %s (set it from the
+flut0 tier B result: `TMAX=20p bash 04_start.sh`). Claude does not log in anywhere: you run these, in order.
+""" % (k.name, len(k.runs), len(k.unsupported), f["coffe_commit"][:7], f["hatf_tech_commit"][:7], f["image"], c["slots"], c["tier_b"]["cpus"], c.get("max_load", 96), c.get("tmax", "5p"))
+            steps = """
+| Step | Where | Command | Takes |
+|---|---|---|---|
+| 1 | ThinkPad | `ssh %(r)s 'bash -s' < 01_probe.sh > probe.txt` | seconds, read only |
+| 2 | ThinkPad | `bash 02_push.sh` | seconds (the image is there after the flut0 kit) |
+| 3 | ThinkPad | `ssh -t %(r)s 'bash %(root)s/kits/%(n)s/03_smoke.sh'` | about a minute |
+| 4 | ThinkPad | `bash 05_pull.sh && bash 06_check.sh` | seconds |
+| 5 | ThinkPad | `ssh %(r)s 'TMAX=<5p or 20p> bash %(root)s/kits/%(n)s/04_start.sh'` | starts detached; %(tb)s |
+| 6 | any time | `ssh %(r)s 'bash %(root)s/kits/%(n)s/status.sh'`, then step 4 again | |
+
+Stop: `ssh %(r)s 'bash %(root)s/kits/%(n)s/stop.sh'`; resume: step 5 again (finished tiles are skipped, finished points
+not run again). Never restart Hyperion's Docker daemon.
+""" % {"r": r, "root": root, "n": k.name, "tb": c["tier_b"].get("estimate", "days")}
+        elif k.engine == "docker":
             r, root = c["remote"], c["root"]
             steps = """
 | Step | Where | Command | Takes |
