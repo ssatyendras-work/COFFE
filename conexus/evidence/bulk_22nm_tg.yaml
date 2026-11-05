@@ -1,0 +1,31 @@
+fpga_arch_params:
+  N : 10
+  K : 6
+  W : 320
+  L : 4
+  I : 40
+  Fs : 3
+  Fcin : 0.2
+  Fcout : 0.025
+  Or : 2
+  Ofb : 1
+  Fclocal : 0.5
+  Rsel : c
+  Rfb : c
+  transistor_type : bulk
+  switch_type : transmission_gate
+  vdd : 0.8
+  vsram : 1.0
+  vsram_n : 0.0
+  gate_length : 22
+  rest_length_factor : 1
+  min_tran_width : 45
+  trans_diffusion_length : 52
+  min_width_tran_area : 28851
+  sram_cell_area : 4
+  model_path : /coffe/spice_models/ptm_22nm_bulk_hp.l
+  model_library : 22NM_BULK_HP
+  arch_out_folder : /work/out
+  metal :
+   - [0.054825,0.000175]
+   - [0.007862,0.000215]

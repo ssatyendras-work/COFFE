@@ -14,6 +14,11 @@
 #    ("VIN n_in gnd PULSE (supply_v 0 3n 0 0 2n 4n)"); ngspice rejects it as the first value.
 #    Braces again ("PULSE ({supply_v} 0 ...)"), in the deck and the libraries.
 #
+# 4. tran_tmax: ".TRAN 1p 8n" gives ngspice a maximum time step of 1 ps (it caps the step at the
+#    print step); HSPICE's step control is not tied to it. A maximum step (COFFE_NGSPICE_TMAX,
+#    default 5p) is appended: on sb_mux 5 times faster, delays within 0.1 % of the 1 ps run (20p:
+#    16 times, within 1 %).
+#
 # All are logged as named rules (rule, count), like hatf-tech's RuleApplied, for the run record.
 
 import os
@@ -28,6 +33,7 @@ _BARE_RC = re.compile(r"(?im)^(\s*[rcl]\w*\s+[\w.!#]+\s+[\w.!#]+\s+)([a-z_]\w*)(
 _LIB_REF = re.compile(r"""(?im)^(\s*\.(?:lib|include|inc)\s+)(["']?)([^"'\s]+)(\2)""")
 _PROBE = re.compile(r"(?<![\w.])([vV])\(\s*([\w.]+)\s*(?:,\s*([\w.]+)\s*)?\)")
 _SOURCE_FN = re.compile(r"(?im)^(\s*[vi]\w*\s+.*?\b(?:pulse|pwl|sin|exp|sffm)\s*\()([^)]*)(\))")
+_TRAN = re.compile(r"(?im)^(\s*\.tran\s+(?!sweep)\S+\s+(?!sweep)\S+)((?:\s+sweep\b.*)?)\s*$")
 _GROUND = {"0", "gnd", "gnd!"}
 
 
@@ -140,6 +146,14 @@ def brace_source_params(text):
     return _SOURCE_FN.sub(arguments, text), count[0]
 
 
+def tran_tmax(text, tmax):
+    """ Give a two-argument .TRAN a maximum time step ("0 <tmax>"); returns the text and how many changed. """
+
+    if not tmax:
+        return text, 0
+    return _TRAN.subn(lambda m: m.group(1) + " 0 " + tmax + m.group(2), text)
+
+
 def resolve_probes(text, hierarchy):
     """ Rewrite V(path) probes that name subcircuit ports to the nets ngspice knows; returns text and count. """
 
@@ -225,7 +239,8 @@ class CoffeLibraries(object):
         text, probes = resolve_probes(text, Hierarchy(self.texts + [deck_text]))
         text, rc = translate_library(text)
         text, sources = brace_source_params(text)
+        text, tmax = tran_tmax(text, os.environ.get("COFFE_NGSPICE_TMAX", "5p"))
         return text, [
             ("ngspice_includes", pointed), ("bare_rc_param", self.rules.get("bare_rc_param", 0) + rc),
-            ("source_param", self.rules.get("source_param", 0) + sources), ("port_probe", probes),
+            ("source_param", self.rules.get("source_param", 0) + sources), ("port_probe", probes), ("tran_tmax", tmax),
         ]
