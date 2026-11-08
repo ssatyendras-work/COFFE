@@ -11,25 +11,19 @@
   "k6-N10-F1-C1",
   "k6-N10-F1-C2",
   "k5-N10-F1-C1",
-  "k5-N10-F1-C2",
   "k6-N8-F1-C1",
   "k6-N8-F1-C2",
   "k4-N10-F1-C1",
-  "k4-N10-F1-C2",
   "k5-N8-F1-C1",
-  "k5-N8-F1-C2",
   "k6-N6-F1-C1",
   "k6-N6-F1-C2",
   "k4-N8-F1-C1",
-  "k4-N8-F1-C2",
   "k5-N6-F1-C1",
-  "k5-N6-F1-C2",
   "k6-N10-F0-C0",
   "k6-N10-F1-C0",
   "k5-N10-F0-C0",
   "k5-N10-F1-C0",
   "k4-N6-F1-C1",
-  "k4-N6-F1-C2",
   "k6-N4-F1-C1",
   "k6-N4-F1-C2",
   "k6-N8-F0-C0",
@@ -37,13 +31,11 @@
   "k4-N10-F0-C0",
   "k4-N10-F1-C0",
   "k5-N4-F1-C1",
-  "k5-N4-F1-C2",
   "k5-N8-F0-C0",
   "k5-N8-F1-C0",
   "k6-N6-F0-C0",
   "k6-N6-F1-C0",
   "k4-N4-F1-C1",
-  "k4-N4-F1-C2",
   "k4-N8-F0-C0",
   "k4-N8-F1-C0",
   "k5-N6-F0-C0",
@@ -86,15 +78,6 @@
    "weight": 100
   },
   {
-   "tile": "k5-N10-F1-C2",
-   "K": 5,
-   "N": 10,
-   "I": 34,
-   "fracture": "F1",
-   "carry": "C2",
-   "weight": 100
-  },
-  {
    "tile": "k6-N8-F1-C1",
    "K": 6,
    "N": 8,
@@ -122,30 +105,12 @@
    "weight": 80
   },
   {
-   "tile": "k4-N10-F1-C2",
-   "K": 4,
-   "N": 10,
-   "I": 28,
-   "fracture": "F1",
-   "carry": "C2",
-   "weight": 80
-  },
-  {
    "tile": "k5-N8-F1-C1",
    "K": 5,
    "N": 8,
    "I": 28,
    "fracture": "F1",
    "carry": "C1",
-   "weight": 80
-  },
-  {
-   "tile": "k5-N8-F1-C2",
-   "K": 5,
-   "N": 8,
-   "I": 28,
-   "fracture": "F1",
-   "carry": "C2",
    "weight": 80
   },
   {
@@ -176,30 +141,12 @@
    "weight": 64
   },
   {
-   "tile": "k4-N8-F1-C2",
-   "K": 4,
-   "N": 8,
-   "I": 22,
-   "fracture": "F1",
-   "carry": "C2",
-   "weight": 64
-  },
-  {
    "tile": "k5-N6-F1-C1",
    "K": 5,
    "N": 6,
    "I": 20,
    "fracture": "F1",
    "carry": "C1",
-   "weight": 60
-  },
-  {
-   "tile": "k5-N6-F1-C2",
-   "K": 5,
-   "N": 6,
-   "I": 20,
-   "fracture": "F1",
-   "carry": "C2",
    "weight": 60
   },
   {
@@ -245,15 +192,6 @@
    "I": 16,
    "fracture": "F1",
    "carry": "C1",
-   "weight": 48
-  },
-  {
-   "tile": "k4-N6-F1-C2",
-   "K": 4,
-   "N": 6,
-   "I": 16,
-   "fracture": "F1",
-   "carry": "C2",
    "weight": 48
   },
   {
@@ -320,15 +258,6 @@
    "weight": 40
   },
   {
-   "tile": "k5-N4-F1-C2",
-   "K": 5,
-   "N": 4,
-   "I": 14,
-   "fracture": "F1",
-   "carry": "C2",
-   "weight": 40
-  },
-  {
    "tile": "k5-N8-F0-C0",
    "K": 5,
    "N": 8,
@@ -371,15 +300,6 @@
    "I": 12,
    "fracture": "F1",
    "carry": "C1",
-   "weight": 32
-  },
-  {
-   "tile": "k4-N4-F1-C2",
-   "K": 4,
-   "N": 4,
-   "I": 12,
-   "fracture": "F1",
-   "carry": "C2",
    "weight": 32
   },
   {
@@ -498,9 +418,19 @@
    "closest": "none: not in P1's 48 tiles"
   },
   {
+   "tile": "k4-N4-F1-C2",
+   "why": "dropped from P1 by decision (owner, 2026-11-08): below K6 a fractured element exposes only K-2 pins to adder operands; two adder bits need 4 distinct signals; VPR packing fails with 'Can not find any logic block that can implement molecule' (Hyperion G0.5, 2026-11-08)",
+   "closest": "none: C2 only at K6"
+  },
+  {
    "tile": "k4-N6-F0-C1",
    "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
    "closest": "none: not in P1's 48 tiles"
+  },
+  {
+   "tile": "k4-N6-F1-C2",
+   "why": "dropped from P1 by decision (owner, 2026-11-08): below K6 a fractured element exposes only K-2 pins to adder operands; two adder bits need 4 distinct signals; VPR packing fails with 'Can not find any logic block that can implement molecule' (Hyperion G0.5, 2026-11-08)",
+   "closest": "none: C2 only at K6"
   },
   {
    "tile": "k4-N8-F0-C1",
@@ -508,9 +438,19 @@
    "closest": "none: not in P1's 48 tiles"
   },
   {
+   "tile": "k4-N8-F1-C2",
+   "why": "dropped from P1 by decision (owner, 2026-11-08): below K6 a fractured element exposes only K-2 pins to adder operands; two adder bits need 4 distinct signals; VPR packing fails with 'Can not find any logic block that can implement molecule' (Hyperion G0.5, 2026-11-08)",
+   "closest": "none: C2 only at K6"
+  },
+  {
    "tile": "k4-N10-F0-C1",
    "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
    "closest": "none: not in P1's 48 tiles"
+  },
+  {
+   "tile": "k4-N10-F1-C2",
+   "why": "dropped from P1 by decision (owner, 2026-11-08): below K6 a fractured element exposes only K-2 pins to adder operands; two adder bits need 4 distinct signals; VPR packing fails with 'Can not find any logic block that can implement molecule' (Hyperion G0.5, 2026-11-08)",
+   "closest": "none: C2 only at K6"
   },
   {
    "tile": "k5-N4-F0-C1",
@@ -518,9 +458,19 @@
    "closest": "none: not in P1's 48 tiles"
   },
   {
+   "tile": "k5-N4-F1-C2",
+   "why": "dropped from P1 by decision (owner, 2026-11-08): below K6 a fractured element exposes only K-2 pins to adder operands; two adder bits need 4 distinct signals; VPR packing fails with 'Can not find any logic block that can implement molecule' (Hyperion G0.5, 2026-11-08)",
+   "closest": "none: C2 only at K6"
+  },
+  {
    "tile": "k5-N6-F0-C1",
    "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
    "closest": "none: not in P1's 48 tiles"
+  },
+  {
+   "tile": "k5-N6-F1-C2",
+   "why": "dropped from P1 by decision (owner, 2026-11-08): below K6 a fractured element exposes only K-2 pins to adder operands; two adder bits need 4 distinct signals; VPR packing fails with 'Can not find any logic block that can implement molecule' (Hyperion G0.5, 2026-11-08)",
+   "closest": "none: C2 only at K6"
   },
   {
    "tile": "k5-N8-F0-C1",
@@ -528,9 +478,19 @@
    "closest": "none: not in P1's 48 tiles"
   },
   {
+   "tile": "k5-N8-F1-C2",
+   "why": "dropped from P1 by decision (owner, 2026-11-08): below K6 a fractured element exposes only K-2 pins to adder operands; two adder bits need 4 distinct signals; VPR packing fails with 'Can not find any logic block that can implement molecule' (Hyperion G0.5, 2026-11-08)",
+   "closest": "none: C2 only at K6"
+  },
+  {
    "tile": "k5-N10-F0-C1",
    "why": "dropped from P1 by the owner's decision (2026-11-05): carry without fracturable LUTs makes little sense; a K4 iCE40/Spartan-3 style tile (LUT as propagate, direct generate input, carry mux and XOR) is a possible later addition. COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
    "closest": "none: not in P1's 48 tiles"
+  },
+  {
+   "tile": "k5-N10-F1-C2",
+   "why": "dropped from P1 by decision (owner, 2026-11-08): below K6 a fractured element exposes only K-2 pins to adder operands; two adder bits need 4 distinct signals; VPR packing fails with 'Can not find any logic block that can implement molecule' (Hyperion G0.5, 2026-11-08)",
+   "closest": "none: C2 only at K6"
   },
   {
    "tile": "k6-N4-F0-C1",

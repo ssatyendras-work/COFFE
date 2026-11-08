@@ -8,7 +8,8 @@
 # carry chain for C1/C2 (FAs per
 # BLE = 1 or 2, flut0's carry type). Routing as the grid: W 300, L 4, Fc_in 0.15, Fc_out 0.10. Everything else is
 # flut0's (conexus/inputs/flut0.yaml). The 12 F0-C1 tiles are not written: dropped from P1 by decision, listed in
-# manifest.json with why (P1 is 48 tiles: K 4/5/6 x N 4/6/8/10 x {F0C0, F1C0, F1C1, F1C2}).
+# manifest.json with why, as are the 8 K4/K5 F1-C2 tiles (P1 is 40 tiles: K 4/5/6 x N 4/6/8/10 x {F0C0, F1C0, F1C1}, and F1C2
+# at K6).
 
 import argparse
 import json
@@ -44,6 +45,10 @@ def expressible(k, fracture, carry):
                 "COFFE2 has no such circuit either (carry chains only with fracturable LUTs)",
                 "none: not in P1's 48 tiles")
     # K4-F1: two 3-LUT halves, built by the fork's 3-LUT generator (coffe/lut3.py, bb8af93)
+    if fracture == "F1" and carry == "C2" and k < 6:
+        return ("dropped from P1 by decision (owner, 2026-11-08): below K6 a fractured element exposes only K-2 pins to adder operands; "
+                "two adder bits need 4 distinct signals; VPR packing fails with 'Can not find any logic block that can implement molecule' "
+                "(Hyperion G0.5, 2026-11-08)", "none: C2 only at K6")
     return None
 
 
