@@ -31,6 +31,10 @@ KIT="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 . "$KIT/kit.env"
 mkdir -p "$KIT/logs"; exec > >(tee -a "$KIT/logs/$(basename "$0" .sh).log") 2>&1
 echo "== $(date -Is) $(basename "$0") on $(hostname)"
+# ThinkPad side: one shared ssh connection per script (OpenSSH ControlMaster; no keys), so the password is typed once.
+SSH_OPTS="-o ControlMaster=auto -o ControlPath=$HOME/.ssh/conexus-%r@%h:%p -o ControlPersist=600"
+ssh() {{ command ssh $SSH_OPTS "$@"; }}
+export RSYNC_RSH="ssh $SSH_OPTS"
 """
 
 
@@ -240,7 +244,9 @@ echo "== other work"; docker ps --format '{{.Image}}  {{.RunningFor}}' | head -2
 """
         push = HEAD.format(title="02: run ON THE THINKPAD: send the image archive (when Hyperion lacks it), the payload and the scripts.") + """(cd "$(dirname "$ARCHIVE_LOCAL")" && sha256sum -c "$ARCHIVE_NAME.sha256")
 ssh "$REMOTE" "mkdir -p '$ROOT/collaterals/images' '$KITDIR'"
-if ssh "$REMOTE" "cd '$ROOT/collaterals/images' 2>/dev/null && sha256sum -c --status '$ARCHIVE_NAME.sha256'" 2>/dev/null; then
+if ssh "$REMOTE" "docker image inspect '$IMAGE' >/dev/null 2>&1"; then
+    echo "image $IMAGE already loaded on Hyperion: archive not sent"
+elif ssh "$REMOTE" "cd '$ROOT/collaterals/images' 2>/dev/null && sha256sum -c --status '$ARCHIVE_NAME.sha256'" 2>/dev/null; then
     echo "image archive already on Hyperion: not sent"
 else
     echo "image archive (about 1 GB)"; rsync -a --info=progress2 "$ARCHIVE_LOCAL" "$ARCHIVE_LOCAL.sha256" "$REMOTE:$ROOT/collaterals/images/"
@@ -259,8 +265,7 @@ echo "== done: next, on Hyperion: ssh -t $REMOTE 'bash $KITDIR/03_tier_a.sh'"
         --entrypoint bash "$IMAGE" -c '%(cmd)s > "$OUT/runner.log" 2>&1'
 }
 """ % {"k": k, "env": container_env("-e "), "cmd": RUN_IN_CONTAINER}
-        load = """echo "image"; (cd "$ROOT/collaterals/images" && sha256sum -c "$ARCHIVE_NAME.sha256")
-docker image inspect "$IMAGE" >/dev/null 2>&1 || docker load -i "$ROOT/collaterals/images/$ARCHIVE_NAME"
+        load = """docker image inspect "$IMAGE" >/dev/null 2>&1 || { (cd "$ROOT/collaterals/images" && sha256sum -c "$ARCHIVE_NAME.sha256") && docker load -i "$ROOT/collaterals/images/$ARCHIVE_NAME"; }
 """
         tier_a = HEAD.format(title="03: run ON HYPERION: tier A (COFFE without sizing on flut0, sb_mux 2-point sweep) for each max step; minutes, in the foreground.") + UNPACK + run_one + load + """unpack
 for run in $RUNS; do echo "== tier A $run"; run_one A "$run" "$A_CPUS"; cat "$RESULTS/tierA/$run/runner.log" | tail -2; done
@@ -290,7 +295,11 @@ rsync -a --prune-empty-dirs --include '*/' --exclude 'points/' --exclude 'arch/'
 find "$KIT/pulled" -name timing.json | sed 's|/timing.json||' | sort
 """
         check = CHECK
-        return {"01_probe.sh": probe, "02_push.sh": push, "03_tier_a.sh": tier_a, "04_tier_b.sh": tier_b, "status.sh": status,
+        run_all = HEAD.format(title="run_all: run ON THE THINKPAD, one line: push, tier A on Hyperion (a minute, in the foreground), then tier B detached, and a status. One password.") + """bash "$KIT/02_push.sh"
+ssh -t "$REMOTE" "bash $KITDIR/03_tier_a.sh && bash $KITDIR/04_tier_b.sh && bash $KITDIR/status.sh"
+echo "== tier B runs on Hyperion. Results whenever you like: bash $KIT/05_pull.sh && bash $KIT/06_check.sh"
+"""
+        return {"run_all.sh": run_all, "01_probe.sh": probe, "02_push.sh": push, "03_tier_a.sh": tier_a, "04_tier_b.sh": tier_b, "status.sh": status,
                 "stop.sh": stop, "05_pull.sh": pull, "06_check.sh": check}
 
 
@@ -368,9 +377,11 @@ test -f "$OUT/timing.json"
         def submit(tier, cpus, mem, time_):
             return HEAD.format(title="0%s: run ON THE LOGIN NODE: submit tier %s, one array task per max step." % ("4" if tier == "A" else "5", tier)) + """N=$(( $(echo $RUNS | wc -w) - 1 ))
 mkdir -p "$RESULTS/logs"
-sbatch --parsable --job-name="%(k)s-%(t)s" --partition="$PARTITION" ${EXCLUDE:+--exclude="$EXCLUDE"} --array=0-$N \\
+DEP=""; [ "%(t)s" = B ] && [ -n "${AFTER_A:-}" ] && [ -f "$RESULTS/tierA.job" ] && DEP="--dependency=afterok:$(cat "$RESULTS/tierA.job")"
+JOB=$(sbatch --parsable $DEP --job-name="%(k)s-%(t)s" --partition="$PARTITION" ${EXCLUDE:+--exclude="$EXCLUDE"} --array=0-$N \\
     --cpus-per-task="$%(t)s_CPUS" --mem="$%(t)s_MEM" --time="$%(t)s_TIME" --output="$RESULTS/logs/tier%(t)s-%%A_%%a.out" \\
-    --export=ALL,KITDIR="$KITDIR",TIER=%(t)s "$KITDIR/task.sbatch"
+    --export=ALL,KITDIR="$KITDIR",TIER=%(t)s "$KITDIR/task.sbatch")
+echo "$JOB" > "$RESULTS/tier%(t)s.job"; echo "submitted tier %(t)s: job $JOB ${DEP:+($DEP)}"
 squeue -u "$USER" -n "%(k)s-%(t)s"
 echo "== follow: bash $KITDIR/status.sh; afterwards from the ThinkPad: bash 06_pull.sh; bash 07_check.sh"
 """ % {"k": k, "t": tier}
@@ -386,7 +397,11 @@ rsync -a --prune-empty-dirs --include '*/' --exclude 'points/' --exclude 'arch/'
     "$SLURM_LOGIN:$RRESULTS/" "$KIT/pulled/"
 find "$KIT/pulled" -name timing.json | sed 's|/timing.json||' | sort
 """
-        return {"01_probe.sh": probe, "02_push.sh": push, "03_setup.sh": setup, "task.sbatch": body,
+        run_all = HEAD.format(title="run_all: run ON THE THINKPAD, one line: push, then on the login node the container setup, tier A, and tier B queued to start when tier A succeeds. SLURM_LOGIN=user@host bash run_all.sh. One password.") + login_needed + remote_root + """bash "$KIT/02_push.sh"
+ssh -t "$SLURM_LOGIN" "bash $RKIT/03_setup.sh && bash $RKIT/04_submit_tier_a.sh && AFTER_A=1 bash $RKIT/05_submit_tier_b.sh && bash $RKIT/status.sh"
+echo "== queued on the cluster. Results whenever you like: bash $KIT/06_pull.sh && bash $KIT/07_check.sh"
+"""
+        return {"run_all.sh": run_all, "01_probe.sh": probe, "02_push.sh": push, "03_setup.sh": setup, "task.sbatch": body,
                 "04_submit_tier_a.sh": submit("A", 0, 0, 0), "05_submit_tier_b.sh": submit("B", 0, 0, 0), "status.sh": status,
                 "06_pull.sh": pull, "07_check.sh": CHECK}
 
@@ -411,8 +426,7 @@ class TileQueueScripts(DockerScripts):
     echo "$(date -Is) end $tile tier $tier rc=$?"
 }
 """ % {"k": k, "env": container_env("-e "), "cmd": RUN_IN_CONTAINER}
-        load = """(cd "$ROOT/collaterals/images" && sha256sum -c "$ARCHIVE_NAME.sha256")
-docker image inspect "$IMAGE" >/dev/null 2>&1 || docker load -i "$ROOT/collaterals/images/$ARCHIVE_NAME"
+        load = """docker image inspect "$IMAGE" >/dev/null 2>&1 || { (cd "$ROOT/collaterals/images" && sha256sum -c "$ARCHIVE_NAME.sha256") && docker load -i "$ROOT/collaterals/images/$ARCHIVE_NAME"; }
 """
         smoke = HEAD.format(title="03: run ON HYPERION: tier A on one small tile (COFFE without sizing, sb_mux 2-point sweep): setup and time per simulation, a minute.") + UNPACK + run_tile + load + """unpack
 run_tile A "$SMOKE_TILE" "$A_CPUS"; tail -1 "$RESULTS/tierA/$SMOKE_TILE/runner.log"
@@ -457,7 +471,11 @@ for f in $(find "$KIT/pulled" -path '*tierB*' -name report.txt | sort); do
     printf '%%-16s %%s  %%s\n' "$(basename "$(dirname "$f")")" "$(grep -m1 'Tile Area' "$f" | awk '{print $3}')" "$(grep -m1 'Representative Critical Path' "$f" | awk '{print $5}')"; done
 echo "Tiles COFFE2 cannot express: $KIT/unsupported.json"
 """
-        return {"01_probe.sh": base["01_probe.sh"], "02_push.sh": base["02_push.sh"].replace("03_tier_a.sh", "03_smoke.sh"), "03_smoke.sh": smoke,
+        run_all = HEAD.format(title="run_all: run ON THE THINKPAD, one line: push, the smoke tile on Hyperion (a minute), then the tile queue detached, and a status. TMAX=20p bash run_all.sh for the 20 ps step. One password.") + """bash "$KIT/02_push.sh"
+ssh -t "$REMOTE" "bash $KITDIR/03_smoke.sh && TMAX=$TMAX bash $KITDIR/04_start.sh && sleep 30 && bash $KITDIR/status.sh"
+echo "== the tile queue runs on Hyperion. Results whenever you like: bash $KIT/05_pull.sh && bash $KIT/06_check.sh"
+"""
+        return {"run_all.sh": run_all, "01_probe.sh": base["01_probe.sh"], "02_push.sh": base["02_push.sh"].replace("03_tier_a.sh", "03_smoke.sh"), "03_smoke.sh": smoke,
                 "04_start.sh": start, "queue.sh": queue, "status.sh": status, "stop.sh": stop, "05_pull.sh": base["05_pull.sh"], "06_check.sh": check}
 
 
