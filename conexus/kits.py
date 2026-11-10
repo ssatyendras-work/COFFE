@@ -450,7 +450,7 @@ rm -f "$RESULTS/queue.pid"; echo "$(date -Is) queue done"
 """ % {"k": k}
         start = HEAD.format(title="04: run ON HYPERION: start the tile queue detached (survives logout). Run again to resume. TMAX=20p bash 04_start.sh to change the step.") + load + """mkdir -p "$RESULTS"
 if [ -f "$RESULTS/queue.pid" ] && kill -0 "$(cat "$RESULTS/queue.pid")" 2>/dev/null; then echo "queue already running"; exit 0; fi
-TMAX="$TMAX" setsid nohup bash "$KIT/queue.sh" >> "$RESULTS/queue.log" 2>&1 < /dev/null &
+(TMAX="$TMAX" exec setsid nohup bash "$KIT/queue.sh") >> "$RESULTS/queue.log" 2>&1 < /dev/null &
 sleep 2; echo "queue started ($SLOTS tiles at once, $B_CPUS CPUs each, max step $TMAX); log $RESULTS/queue.log; follow with bash $KITDIR/status.sh"
 """
         status = HEAD.format(title="status: run ON HYPERION: tiles finished, running, point records so far.") + """docker ps --filter "name=^$KIT_NAME-" --format '{{.Names}}  {{.Status}}'

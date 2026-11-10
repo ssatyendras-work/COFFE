@@ -43,7 +43,7 @@ kits:
     tiles: conexus/inputs/g04c
     smoke_tile: k5-N4-F1-C1
     tmax: 5p
-    slots: 4
+    slots: 3  # 3 x 8 CPUs beside the Koios and profile queues (2026-11-10)
     iterations: 4
     max_load: 96
     tier_a: {cpus: 2, estimate: "about a minute"}
