@@ -42,6 +42,23 @@ _SOURCE_FN = re.compile(r"(?im)^(\s*[vi]\w*\s+.*?\b(?:pulse|pwl|sin|exp|sffm)\s*
 _TRAN = re.compile(r"(?im)^(\s*\.tran\s+(?!sweep)\S+\s+(?!sweep)\S+)((?:\s+sweep\b.*)?)\s*$")
 _GROUND_FIND = re.compile(r"(?im)^(\s*\.meas(?:ure)?\s+tran\s+\w+)\s+find\s+v\(\s*(?:gnd|0)\s*\)\s+at\s*=\s*\S+\s*$")
 _GROUND = {"0", "gnd", "gnd!"}
+# A MOSFET instance line (COFFE writes them as M<name> d g s b <model> ...).
+_MOSFET = re.compile(r"(?im)^(\s*)[mM](\S+\s)")
+
+
+def osdi_active():
+    """ True when an OSDI library is loaded (COFFE_NGSPICE_OSDI set): FinFET decks, BSIM-CMG through OSDI. """
+
+    return bool(os.environ.get("COFFE_NGSPICE_OSDI", ""))
+
+
+def osdi_instances(text):
+    """ With OSDI loaded, a MOSFET instance takes ngspice's N prefix (an OSDI device); returns the text and how many
+    changed. Without OSDI, the text is unchanged (bulk/PTM decks use ngspice's own BSIM4). """
+
+    if not osdi_active():
+        return text, 0
+    return _MOSFET.subn(r"\1N\2", text)
 
 
 def logical_lines(text):
@@ -133,7 +150,8 @@ def translate_library_rules(text):
 
     text, rc = translate_library(text)
     text, sources = brace_source_params(text)
-    return text, {"bare_rc_param": rc, "source_param": sources}
+    text, osdi = osdi_instances(text)
+    return text, {"bare_rc_param": rc, "source_param": sources, "osdi_instance": osdi}
 
 
 def brace_source_params(text):
@@ -222,7 +240,7 @@ class CoffeLibraries(object):
         target = os.path.basename(self.includes_path)[:-2] + self.suffix
         if stamp == self._stamp:
             return target
-        self.texts, self.rules, renamed = [], {"bare_rc_param": 0, "source_param": 0}, {}
+        self.texts, self.rules, renamed = [], {"bare_rc_param": 0, "source_param": 0, "osdi_instance": 0}, {}
         for path in sources:
             if not os.path.isfile(path):
                 continue
@@ -276,7 +294,8 @@ class CoffeLibraries(object):
         text, sources = brace_source_params(text)
         text, tmax = tran_tmax(text, os.environ.get("COFFE_NGSPICE_TMAX", "5p"))
         text, grounds = ground_find(text)
-        return text, [
+        text, osdi = osdi_instances(text)
+        return text, [("osdi_instance", self.rules.get("osdi_instance", 0) + osdi),
             ("ngspice_includes", pointed), ("bare_rc_param", self.rules.get("bare_rc_param", 0) + rc),
             ("source_param", self.rules.get("source_param", 0) + sources), ("port_probe", probes), ("tran_tmax", tmax), ("ground_find", grounds),
         ]

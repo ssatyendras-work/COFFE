@@ -93,13 +93,22 @@ def test_port_probes_resolve_to_the_owning_net():
 def test_the_deck_points_at_ngspice_copies_with_rules_counted(arch):
     libraries = dialect.CoffeLibraries(str(arch / "includes.l"))
     text, rules = libraries.deck_for_ngspice(DECK)
-    assert dict(rules) == {"ngspice_includes": 1, "bare_rc_param": 3, "source_param": 1, "port_probe": 4, "tran_tmax": 1, "ground_find": 0}
+    assert dict(rules) == {"osdi_instance": 0, "ngspice_includes": 1, "bare_rc_param": 3, "source_param": 1, "port_probe": 4, "tran_tmax": 1, "ground_find": 0}
     assert ".TRAN 1p 4n 0 5p SWEEP DATA=sweep_data" in text
     assert "PULSE ({supply_v} 0 0 0 0 2n 4n)" in text
     assert '.LIB "../includes.ngspice.l" INCLUDES' in text and "TRIG V(n_1)" in text
     assert '"basic_subcircuits.ngspice.l"' in (arch / "includes.ngspice.l").read_text()
     assert "{Cw}" in (arch / "basic_subcircuits.ngspice.l").read_text()
     assert (arch / "basic_subcircuits.l").read_text() == LIBRARY  # originals untouched
+
+
+def test_mosfets_become_osdi_devices_only_while_osdi_is_loaded(monkeypatch):
+    finfet = "MNDOWN n_out n_in n_gnd n_gnd nmos L=gate_length nfin=Wn\n  mp1 a b c d pmos\nRx a b 1\n"
+    monkeypatch.setenv("COFFE_NGSPICE_OSDI", "")
+    assert dialect.osdi_instances(finfet) == (finfet, 0)
+    monkeypatch.setenv("COFFE_NGSPICE_OSDI", "/opt/conexus/lib/osdi/bsimcmg.osdi")
+    text, count = dialect.osdi_instances(finfet)
+    assert count == 2 and text.startswith("NNDOWN n_out") and "  Np1 a b c d pmos" in text and "Rx a b 1" in text
 
 
 def test_meaz_combination_is_the_same_for_both_simulators():

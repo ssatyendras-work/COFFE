@@ -65,8 +65,15 @@ counted over the wire (L tiles) instead, logged; other tiles keep COFFE's count.
 without sizing on ngspice, 24 simulations, 470.4 um2, 144.21 ps. COFFE's xcarry_chain_mux deck measures
 `V(n_general_out)`, a node it does not have, so `meas_logic_low_voltage` fails there on any simulator (unused).
 
-Not yet: sizing runs (thousands of points; one ngspice process per point, sequential), FinFET
-decks (ASAP7 cards through OSDI BSIM-CMG), a comparison with HSPICE on the same tiles (G0.4b, on Slurm).
+FinFET decks (HATF-TECH-M2.3, gate 2): ASAP7's level 72 card is rewritten for the OSDI BSIM-CMG by hatf-tech's
+`coffe_tile.osdi_card` (inside its `.LIB` section, a run artifact) and, with `COFFE_NGSPICE_OSDI` set, MOSFET instances
+take the N prefix (`osdi_instance` rule). A point ngspice aborts with "Timestep too small" (pass-transistor LUT outputs at
+a 5 ps step) runs once more at `COFFE_NGSPICE_RETRY_TMAX` (1 ps), recorded as `retry` on the point; on the
+local_ble_output deck 1 ps and gear integration agree within 0.1 %. Inputs: `conexus/inputs/asap7_k6n10_pt.yaml` (COFFE's
+archived 7 nm pass-transistor run, gate 2) and `asap7_k6n10_tg.yaml` (transmission gates, P1's ASAP7 switch type). The
+ASAP7 cards are BSIM-CMG 107; the OSDI build is 111.2.1 and ignores coremod, capmod, nseg and etaqm (open question).
+
+Not yet: a comparison with HSPICE on the same tiles (G0.4b, on Slurm).
 
 
 ## Memory caps on Hyperion (2026-11-10)

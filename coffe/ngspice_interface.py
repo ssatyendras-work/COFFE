@@ -19,13 +19,16 @@
 # folder; a point whose record.json matches the deck is not run again (resume after a stop).
 # Environment:
 #   COFFE_NGSPICE        ngspice executable (default: ngspice on PATH)
-#   COFFE_NGSPICE_OSDI   OSDI library to load, empty for none (bulk/PTM decks need none)
+#   COFFE_NGSPICE_OSDI   OSDI library to load, empty for none (bulk/PTM decks need none); when set, MOSFET instances
+#                        take ngspice's N prefix (ngspice_dialect.osdi_instances: FinFET decks on BSIM-CMG)
 #   COFFE_NGSPICE_TIMEOUT  seconds per point (default 600)
 #   COFFE_NGSPICE_THREADS  ngspice threads per run ("set num_threads" in .spiceinit; default 1: one sweep point
 #                          per core). ngspice ignores OMP_NUM_THREADS and otherwise threads over every core,
 #                          which a container's CPU quota throttles: sb_mux 5.95 s at 2 CPUs, 0.85 s with one thread
 #   COFFE_NGSPICE_WORKERS  sweep points run at once (default 1)
 #   COFFE_NGSPICE_KEEP     1 keeps each point's deck and log beside its record (default: record only)
+#   COFFE_NGSPICE_RETRY_TMAX  maximum step of the one rerun of a point ngspice aborted with "Timestep too small" (default 1p;
+#                          recorded as "retry" on the point)
 #   COFFE_NGSPICE_POINTS   folder of the point folders (default <deck folder>/points); put it outside
 #                          COFFE's output folder, which COFFE empties when it starts, to resume a stopped run
 
@@ -181,9 +184,22 @@ class NgspiceInterface(spice.SpiceInterface):
                 spiceinit.write("set num_threads=%s\n" % self.threads)
         start = time.time()
         log = self._simulate(prepared.deck)
+        retry = None
+        if self.simulator == "ngspice" and "Timestep too small" in log:
+            # ngspice gave up on a fast edge at COFFE_NGSPICE_TMAX (seen on FinFET pass-transistor LUT outputs at 5 ps):
+            # the point runs once more at a finer maximum step, recorded on the point
+            fine = os.environ.get("COFFE_NGSPICE_RETRY_TMAX", "1p")
+            deck_text = prepared.deck.read_text()
+            retried, count = re.subn(r"(?im)^(\s*\.tran\s+\S+\s+\S+\s+\S+\s+)\S+(\s*)$", r"\g<1>" + fine + r"\2", deck_text)
+            if count:
+                prepared.deck.write_text(retried)
+                log = self._simulate(prepared.deck)
+                retry = {"reason": "timestep too small", "tmax": fine, "ok": "Timestep too small" not in log}
         seconds = round(time.time() - start, 2)
         [measures] = self.foreign.read(prepared, log)
         record = prepared.record()
+        if retry is not None:
+            record["retry"] = retry
         record["simulator"] = dict(record.get("simulator", {}), version=self.backend.version(log))
         record.update({
             "deck_digest": digest, "coffe_rules": rules, "seconds": seconds, "resumed": False,
