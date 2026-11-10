@@ -72,7 +72,7 @@ pass-transistor LUT outputs at a 5 ps step), and if that fails too, also with gm
 (1e-15; the initial timepoint of a pass-transistor connection-block mux driving a LUT input); the steps are recorded as
 `retry` on the point, and a point whose retry failed is not reused on resume. On local_ble_output 1 ps and gear
 integration agree within 0.1 %; on sb_mux gmin 1e-15 leaves delays and power unchanged to six digits. Inputs: `conexus/inputs/asap7_k6n10_pt.yaml` (COFFE's
-archived 7 nm pass-transistor run, gate 2) and `asap7_k6n10_tg.yaml` (transmission gates, P1's ASAP7 switch type). The
+archived 7 nm pass-transistor run, gate 2) and `asap7_k6n10_tg_<variant>.yaml` (transmission gates, P1's ASAP7 switch type; metal variants stack-mymz45 (default: Mx M1-M3, My M4-M5 from hatf-tech's stack model), stack-my67 (general routing on M6-M7) and coffe-f7 (COFFE's list, the reference)). The
 ASAP7 cards are BSIM-CMG 107; the OSDI build is 111.2.1 and ignores coremod, capmod, nseg and etaqm (open question).
 
 Not yet: a comparison with HSPICE on the same tiles (G0.4b, on Slurm).

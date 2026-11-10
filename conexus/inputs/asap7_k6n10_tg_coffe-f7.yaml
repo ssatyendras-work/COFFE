@@ -1,4 +1,4 @@
-# ASAP7 K6 N10 with transmission gates: COFFE's 7 nm example as shipped (the switch type of P1's ASAP7 tiles).
+# ASAP7 K6 N10 with transmission gates, variant coffe-f7: COFFE's 7 nm example as shipped, its F7 metal list unchanged (the reference track).
 fpga_arch_params:
   N: 10
   K: 6
