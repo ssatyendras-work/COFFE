@@ -457,7 +457,7 @@ sleep 2; echo "queue started ($SLOTS tiles at once, $B_CPUS CPUs each, max step 
 done=0; for t in $RUNS; do [ -f "$RESULTS/tierB/$t/timing.json" ] && done=$((done + 1)); done
 echo "tiles finished: $done of $(echo $RUNS | wc -w)"
 for d in $(docker ps --filter "name=^$KIT_NAME-B-" --format '{{.Names}}' | sed "s/^$KIT_NAME-B-//"); do
-    printf '%%s: %%s point records\n' "$d" "$(find "$RESULTS/tierB/$d/points" -name record.json 2>/dev/null | wc -l)"; done
+    printf '%s: %s point records\\n' "$d" "$(find "$RESULTS/tierB/$d/points" -name record.json 2>/dev/null | wc -l)"; done
 tail -3 "$RESULTS/queue.log" 2>/dev/null; uptime
 """
         stop = HEAD.format(title="stop: run ON HYPERION: stop the queue and its containers (finished points are kept; 04_start.sh resumes).") + """[ -f "$RESULTS/queue.pid" ] && kill -TERM "$(cat "$RESULTS/queue.pid")" 2>/dev/null || true

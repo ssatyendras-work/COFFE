@@ -67,3 +67,8 @@ without sizing on ngspice, 24 simulations, 470.4 um2, 144.21 ps. COFFE's xcarry_
 
 Not yet: sizing runs (thousands of points; one ngspice process per point, sequential), FinFET
 decks (ASAP7 cards through OSDI BSIM-CMG), a comparison with HSPICE on the same tiles (G0.4b, on Slurm).
+
+
+## Memory caps on Hyperion (2026-11-10)
+
+Every kit container runs with `--memory $MEMORY --memory-swap $MEMORY` (kit.env, default 32g). Hyperion's kernel has no swap accounting, so Docker ignores the swap cap ("Memory limited without swap"); host swap is 63 GB. ngspice needs a few GB per tile, so the memory cap and the tile slots (SLOTS, 3) are the protection.
