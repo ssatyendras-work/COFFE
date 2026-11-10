@@ -27,8 +27,9 @@
 #                          which a container's CPU quota throttles: sb_mux 5.95 s at 2 CPUs, 0.85 s with one thread
 #   COFFE_NGSPICE_WORKERS  sweep points run at once (default 1)
 #   COFFE_NGSPICE_KEEP     1 keeps each point's deck and log beside its record (default: record only)
-#   COFFE_NGSPICE_RETRY_TMAX  maximum step of the one rerun of a point ngspice aborted with "Timestep too small" (default 1p;
-#                          recorded as "retry" on the point)
+#   COFFE_NGSPICE_RETRY_TMAX  maximum step of the rerun of a point ngspice aborted with "Timestep too small" (default 1p)
+#   COFFE_NGSPICE_RETRY_GMIN  gmin of the second rerun, if the first fails too (default 1e-15; ngspice's own is 1e-12);
+#                          the reruns are recorded as "retry" on the point
 #   COFFE_NGSPICE_POINTS   folder of the point folders (default <deck folder>/points); put it outside
 #                          COFFE's output folder, which COFFE empties when it starts, to resume a stopped run
 
@@ -169,7 +170,8 @@ class NgspiceInterface(spice.SpiceInterface):
         if saved.is_file():
             try:
                 record = json.loads(saved.read_text())
-                if record.get("deck_digest") == digest and record.get("values") == point.values:
+                # a point whose retry failed is run again (the retry ladder may have grown since)
+                if record.get("deck_digest") == digest and record.get("values") == point.values and (record.get("retry") or {}).get("ok", True):
                     record["resumed"] = True
                     return record
             except ValueError:
@@ -186,15 +188,24 @@ class NgspiceInterface(spice.SpiceInterface):
         log = self._simulate(prepared.deck)
         retry = None
         if self.simulator == "ngspice" and "Timestep too small" in log:
-            # ngspice gave up on a fast edge at COFFE_NGSPICE_TMAX (seen on FinFET pass-transistor LUT outputs at 5 ps):
-            # the point runs once more at a finer maximum step, recorded on the point
+            # ngspice gave up (seen on FinFET pass-transistor decks: a fast edge at the 5 ps COFFE_NGSPICE_TMAX, or the
+            # initial timepoint of a pass-transistor mux): the point runs again at a finer maximum step, then also with a
+            # smaller gmin; the steps tried are recorded on the point
             fine = os.environ.get("COFFE_NGSPICE_RETRY_TMAX", "1p")
+            gmin = os.environ.get("COFFE_NGSPICE_RETRY_GMIN", "1e-15")
             deck_text = prepared.deck.read_text()
             retried, count = re.subn(r"(?im)^(\s*\.tran\s+\S+\s+\S+\s+\S+\s+)\S+(\s*)$", r"\g<1>" + fine + r"\2", deck_text)
             if count:
-                prepared.deck.write_text(retried)
-                log = self._simulate(prepared.deck)
-                retry = {"reason": "timestep too small", "tmax": fine, "ok": "Timestep too small" not in log}
+                retry = {"reason": "timestep too small", "tmax": fine, "steps": []}
+                for step, text in (("tmax", retried), ("tmax+gmin", re.sub(r"(?im)^(\s*\.tran\s.*)$", r"\1\n.option gmin=" + gmin, retried, count=1))):
+                    prepared.deck.write_text(text)
+                    log = self._simulate(prepared.deck)
+                    retry["steps"].append(step)
+                    if "Timestep too small" not in log:
+                        break
+                retry["ok"] = "Timestep too small" not in log
+                if retry["steps"][-1] == "tmax+gmin":
+                    retry["gmin"] = gmin
         seconds = round(time.time() - start, 2)
         [measures] = self.foreign.read(prepared, log)
         record = prepared.record()

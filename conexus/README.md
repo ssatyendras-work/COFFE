@@ -67,9 +67,11 @@ without sizing on ngspice, 24 simulations, 470.4 um2, 144.21 ps. COFFE's xcarry_
 
 FinFET decks (HATF-TECH-M2.3, gate 2): ASAP7's level 72 card is rewritten for the OSDI BSIM-CMG by hatf-tech's
 `coffe_tile.osdi_card` (inside its `.LIB` section, a run artifact) and, with `COFFE_NGSPICE_OSDI` set, MOSFET instances
-take the N prefix (`osdi_instance` rule). A point ngspice aborts with "Timestep too small" (pass-transistor LUT outputs at
-a 5 ps step) runs once more at `COFFE_NGSPICE_RETRY_TMAX` (1 ps), recorded as `retry` on the point; on the
-local_ble_output deck 1 ps and gear integration agree within 0.1 %. Inputs: `conexus/inputs/asap7_k6n10_pt.yaml` (COFFE's
+take the N prefix (`osdi_instance` rule). A point ngspice aborts with "Timestep too small" runs again at `COFFE_NGSPICE_RETRY_TMAX` (1 ps;
+pass-transistor LUT outputs at a 5 ps step), and if that fails too, also with gmin `COFFE_NGSPICE_RETRY_GMIN`
+(1e-15; the initial timepoint of a pass-transistor connection-block mux driving a LUT input); the steps are recorded as
+`retry` on the point, and a point whose retry failed is not reused on resume. On local_ble_output 1 ps and gear
+integration agree within 0.1 %; on sb_mux gmin 1e-15 leaves delays and power unchanged to six digits. Inputs: `conexus/inputs/asap7_k6n10_pt.yaml` (COFFE's
 archived 7 nm pass-transistor run, gate 2) and `asap7_k6n10_tg.yaml` (transmission gates, P1's ASAP7 switch type). The
 ASAP7 cards are BSIM-CMG 107; the OSDI build is 111.2.1 and ignores coremod, capmod, nseg and etaqm (open question).
 
