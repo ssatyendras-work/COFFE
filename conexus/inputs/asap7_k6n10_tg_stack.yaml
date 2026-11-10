@@ -1,0 +1,34 @@
+# ASAP7 K6 N10 with transmission gates (the owner's switch type for ASAP7 and GT2N): P1's ASAP7 tile.
+# As asap7_k6n10_tg.yaml, with the metal list from hatf-tech's ADR-0007 stack model instead of COFFE's F7 values:
+# coffe-mxmymz preset (ADR-0007 Amendment 1), Mx = M1-M3, My = M4-M5 of resources/tool/stacks/asap7.yaml (stack.hatf-tech.asap7.v1),
+# through CoffeCollapse at Miller factor 1 (ohm/nm, fF/nm). COFFE uses two layers: Mx for everything but general routing, My for it.
+fpga_arch_params:
+  N: 10
+  K: 6
+  W: 320
+  L: 4
+  I: 40
+  Fs: 3
+  Fcin: 0.2
+  Fcout: 0.025
+  Or: 2
+  Ofb: 1
+  Fclocal: 0.5
+  Rsel: c
+  Rfb: c
+  transistor_type: finfet
+  switch_type: transmission_gate
+  vdd: 0.7
+  vsram: 0.9
+  vsram_n: 0.0
+  gate_length: 20
+  rest_length_factor: 5
+  min_tran_width: 27
+  trans_diffusion_length: 27
+  min_width_tran_area: 2165
+  sram_cell_area: 4
+  model_path: spice_models/7nm_TT_160803.l
+  model_library: 7NM_FINFET_HP
+  metal:
+  - [0.198406, 0.0002646]
+  - [0.090016, 0.0002835]
