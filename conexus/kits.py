@@ -138,7 +138,7 @@ class Kit(object):
             "IMAGE='%s'" % self.defaults["image"]["reference"], "ARCHIVE_NAME='%s'" % os.path.basename(archive),
             "ARCHIVE_LOCAL='%s'" % archive, "RUNS='%s'" % " ".join(r["name"] for r in self.runs),
             "INPUT='%s'" % c.get("input", "conexus/inputs/flut0.yaml"), "ITERATIONS='%d'" % c.get("iterations", 4),
-            "A_CPUS=\"${A_CPUS:-%d}\"" % c["tier_a"]["cpus"], "B_CPUS=\"${B_CPUS:-%d}\"" % c["tier_b"]["cpus"], "MAX_LOAD=\"${MAX_LOAD:-%g}\"" % c.get("max_load", 96),
+            "A_CPUS=\"${A_CPUS:-%d}\"" % c["tier_a"]["cpus"], "B_CPUS=\"${B_CPUS:-%d}\"" % c["tier_b"]["cpus"], "MAX_LOAD=\"${MAX_LOAD:-%g}\"" % c.get("max_load", 96), "MEMORY=\"${MEMORY:-%s}\"" % c.get("memory", "32g"),
         ]
         if "tiles" in c:
             lines += ["TMAX=\"${TMAX:-%s}\"  # maximum ngspice time step for every tile (flut0 tier B decides 5p or 20p)" % c.get("tmax", "5p"),
@@ -260,7 +260,7 @@ echo "== done: next, on Hyperion: ssh -t $REMOTE 'bash $KITDIR/03_tier_a.sh'"
     mkdir -p "$OUT"
     if [ -f "$OUT/timing.json" ] && [ -f "$OUT/report.txt" ]; then echo "$run tier $tier: done before"; return 0; fi
     docker rm -f "%(k)s-$tier-$run" >/dev/null 2>&1 || true
-    docker run ${4:+-d} --rm --init --name "%(k)s-$tier-$run" --cpus "$cpus" --user "$(id -u):$(id -g)" -v "$ROOT:$ROOT" \\
+    docker run ${4:+-d} --rm --init --name "%(k)s-$tier-$run" --cpus "$cpus" --memory "$MEMORY" --memory-swap "$MEMORY" --user "$(id -u):$(id -g)" -v "$ROOT:$ROOT" \\
         %(env)s -e "SRC=$SRC" -e "OUT=$OUT" -e "TIER=$tier" -e "INPUT=$INPUT" -e "ITERATIONS=$ITERATIONS" \\
         --entrypoint bash "$IMAGE" -c '%(cmd)s > "$OUT/runner.log" 2>&1'
 }
@@ -420,7 +420,7 @@ class TileQueueScripts(DockerScripts):
     if [ -f "$OUT/timing.json" ] && [ -f "$OUT/report.txt" ]; then echo "$(date -Is) $tile tier $tier: done before"; return 0; fi
     docker rm -f "%(k)s-$tier-$tile" >/dev/null 2>&1 || true
     echo "$(date -Is) start $tile tier $tier ($cpus CPUs, max step $TMAX)"
-    docker run --rm --init --name "%(k)s-$tier-$tile" --cpus "$cpus" --user "$(id -u):$(id -g)" -v "$ROOT:$ROOT" \\
+    docker run --rm --init --name "%(k)s-$tier-$tile" --cpus "$cpus" --memory "$MEMORY" --memory-swap "$MEMORY" --user "$(id -u):$(id -g)" -v "$ROOT:$ROOT" \\
         %(env)s -e "SRC=$SRC" -e "OUT=$OUT" -e "TIER=$tier" -e "INPUT=$INPUT" -e "ITERATIONS=$ITERATIONS" \\
         --entrypoint bash "$IMAGE" -c '%(cmd)s > "$OUT/runner.log" 2>&1'
     echo "$(date -Is) end $tile tier $tier rc=$?"
@@ -444,7 +444,7 @@ one() {
     while awk -v m="$MAX_LOAD" '{exit !($1 > m)}' /proc/loadavg; do echo "$(date -Is) load $(cut -d' ' -f1 /proc/loadavg) > $MAX_LOAD: $1 waits"; sleep 60; done
     run_tile B "$1" "$B_CPUS"
 }
-export -f one run_tile unpack tmax_of; export KIT ROOT RESULTS SRC KITDIR IMAGE ITERATIONS MAX_LOAD B_CPUS TMAX $(compgen -v | grep '^INPUT_')
+export -f one run_tile unpack tmax_of; export KIT ROOT RESULTS SRC KITDIR IMAGE ITERATIONS MAX_LOAD MEMORY B_CPUS TMAX $(compgen -v | grep '^INPUT_')
 printf '%%s\n' $RUNS | xargs -P "$SLOTS" -I{} bash -c 'one "$@"; sleep 20' _ {}
 rm -f "$RESULTS/queue.pid"; echo "$(date -Is) queue done"
 """ % {"k": k}
