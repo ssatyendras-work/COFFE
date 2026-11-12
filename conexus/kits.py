@@ -468,7 +468,7 @@ docker ps -q --filter "name=^$KIT_NAME-" | xargs -r docker stop
         check = check.replace("--archive \"$KIT/tools/flut_report.archive.txt\" ", "")
         check += """echo "== per tile (tier B): tile area, representative critical path"
 for f in $(find "$KIT/pulled" -path '*tierB*' -name report.txt | sort); do
-    printf '%%-16s %%s  %%s\n' "$(basename "$(dirname "$f")")" "$(grep -m1 'Tile Area' "$f" | awk '{print $3}')" "$(grep -m1 'Representative Critical Path' "$f" | awk '{print $5}')"; done
+    printf '%-16s %s  %s\\n' "$(basename "$(dirname "$f")")" "$(grep -m1 'Tile Area' "$f" | awk '{print $3}')" "$(grep -m1 'Representative Critical Path' "$f" | awk '{print $5}')"; done
 echo "Tiles COFFE2 cannot express: $KIT/unsupported.json"
 """
         run_all = HEAD.format(title="run_all: run ON THE THINKPAD, one line: push, the smoke tile on Hyperion (a minute), then the tile queue detached, and a status. TMAX=20p bash run_all.sh for the 20 ps step. One password.") + """bash "$KIT/02_push.sh"
